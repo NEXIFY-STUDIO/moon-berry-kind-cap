@@ -1,8 +1,9 @@
 # Blueprint Scanner
 
+[![CI](https://github.com/NEXIFY-STUDIO/moon-berry-kind-cap/actions/workflows/ci.yml/badge.svg)](https://github.com/NEXIFY-STUDIO/moon-berry-kind-cap/actions/workflows/ci.yml)
 [![Node 22](https://img.shields.io/badge/node-22-brightgreen)](package.json)
-[![Tests](https://img.shields.io/badge/tests-unit%2Fintegration-success)](docs/TESTING.md)
-[![License](https://img.shields.io/badge/license-private-lightgrey)](#)
+[![Tests](https://img.shields.io/badge/tests-271%20passed-success)](docs/TESTING.md)
+[![Repo](https://img.shields.io/badge/github-NEXIFY--STUDIO%2Fmoon--berry--kind--cap-blue)](https://github.com/NEXIFY-STUDIO/moon-berry-kind-cap)
 
 **Public URL or HTML → structured frontend reverse-spec (blueprint).**  
 Not a backend/DB/secrets clone — a high-signal public UI snapshot for rebuild, audit, and design extraction.
