@@ -13,6 +13,7 @@ import {
   ScanForm,
   type ScanFormDeepLink,
 } from "@/components/blueprint/scan-form";
+import { ScanHeroBg } from "@/components/blueprint/scan-hero-bg";
 import { BlueprintView } from "@/components/blueprint/blueprint-view";
 import { HistoryList } from "@/components/blueprint/history-list";
 import { ComparePanel } from "@/components/blueprint/compare-panel";
@@ -222,12 +223,12 @@ function HomePage() {
 
       {!showResult && (
         <section className="relative min-h-dvh w-full flex flex-col items-center justify-center px-4 py-10 overflow-hidden">
-          <div aria-hidden className="ambient-glow" />
+          <ScanHeroBg />
 
           <div className="fixed top-3 left-3 sm:top-4 sm:left-4 z-40">
             <a
               href="/dashboard"
-              className="inline-flex items-center gap-1.5 h-8 px-2.5 text-[11px] font-medium rounded-lg border border-border bg-bg-elevated/90 text-fg-muted hover:text-fg hover:bg-bg-subtle transition-colors"
+              className="inline-flex items-center gap-1.5 h-8 px-2.5 text-[11px] font-medium rounded-lg border border-border bg-bg-elevated/90 text-fg-muted hover:text-fg hover:bg-bg-subtle transition-colors backdrop-blur-sm"
             >
               <LayoutDashboard className="size-3.5" />
               Dashboard
@@ -238,10 +239,10 @@ function HomePage() {
           <div className="w-full max-w-[540px] flex flex-col gap-8 z-10">
             <div className="flex flex-col items-center gap-2 text-center min-h-[5.5rem]">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-lg bg-bg-subtle border border-border text-accent">
+                <div className="p-2 rounded-lg bg-bg-subtle/80 border border-border text-accent backdrop-blur-sm">
                   <ScanLine className="size-5" />
                 </div>
-                <span className="text-2xl font-semibold tracking-tight text-fg">
+                <span className="text-2xl font-semibold tracking-tight text-fg drop-shadow-[0_0_24px_color-mix(in_oklab,var(--color-accent)_35%,transparent)]">
                   {t("app.name")}
                 </span>
               </div>
@@ -253,7 +254,7 @@ function HomePage() {
               </p>
             </div>
 
-            <div className="panel p-5 sm:p-6 shadow-soft">
+            <div className="panel p-5 sm:p-6 shadow-soft bg-bg-elevated/90 backdrop-blur-md border-border/80">
               <ScanForm
                 onScanned={handleScanned}
                 busy={busy}
@@ -263,7 +264,7 @@ function HomePage() {
               />
             </div>
 
-            <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-xs text-fg-muted border-t border-border pt-6 min-h-[2.75rem]">
+            <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-xs text-fg-muted border-t border-border/60 pt-6 min-h-[2.75rem]">
               <button
                 type="button"
                 onClick={() => setOverlay("history")}

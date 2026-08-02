@@ -1,19 +1,26 @@
 {
   "name": "Blueprint Scanner",
   "short_name": "Blueprint",
+  "description": "Frontend blueprint from any public URL",
+  "start_url": "/",
+  "scope": "/",
+  "id": "/",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/android-chrome-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
   "theme_color": "#0a0a0b",
   "background_color": "#0a0a0b",
-  "display": "standalone"
+  "display": "standalone",
+  "lang": "en"
 }

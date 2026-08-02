@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useReducer,
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -24,11 +25,18 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ScanProgressOverlay } from "@/components/blueprint/scan-progress-overlay";
 import { scanBlueprint } from "@/lib/blueprint/server";
 import { save as historySave } from "@/lib/history/store";
 import type { Blueprint } from "@/lib/blueprint/types";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n/context";
+import {
+  estimateTauMs,
+  reduceScanProgress,
+  SCAN_FINISH_HOLD_MS,
+  SCAN_PROGRESS_INITIAL,
+} from "@/lib/scan/progress-machine";
 
 const EXAMPLES = [
   "https://example.com",
@@ -302,11 +310,18 @@ export function ScanForm({
   const [localBusy, setLocalBusy] = useState(false);
   const [highlight, setHighlight] = useState<string | null>(null);
   const [deepNote, setDeepNote] = useState<string | null>(null);
+  const [progress, dispatchProgress] = useReducer(
+    reduceScanProgress,
+    SCAN_PROGRESS_INITIAL,
+  );
   const abortRef = useRef<AbortController | null>(null);
   const cancelledRef = useRef(false);
   const urlInputRef = useRef<HTMLInputElement | null>(null);
   const htmlAreaRef = useRef<HTMLTextAreaElement | null>(null);
   const appliedKeyRef = useRef<string>("");
+  const progressStartRef = useRef(0);
+  const progressRafRef = useRef<number | null>(null);
+  const finishTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isBusy = busy ?? localBusy;
   const crawlOn = maxPages > 1;
 
@@ -314,6 +329,42 @@ export function ScanForm({
     setLocalBusy(v);
     setBusy?.(v);
   };
+
+  const stopProgressLoop = useCallback(() => {
+    if (progressRafRef.current != null) {
+      cancelAnimationFrame(progressRafRef.current);
+      progressRafRef.current = null;
+    }
+  }, []);
+
+  const startProgressLoop = useCallback(() => {
+    stopProgressLoop();
+    progressStartRef.current = performance.now();
+    dispatchProgress({ type: "START" });
+    const tauMs = estimateTauMs({
+      maxPages,
+      render,
+      captureAssets,
+      wpJetEngine,
+      mode,
+    });
+    const tick = (now: number) => {
+      dispatchProgress({
+        type: "TICK",
+        elapsedMs: now - progressStartRef.current,
+        tauMs,
+      });
+      progressRafRef.current = requestAnimationFrame(tick);
+    };
+    progressRafRef.current = requestAnimationFrame(tick);
+  }, [stopProgressLoop, maxPages, render, captureAssets, wpJetEngine, mode]);
+
+  useEffect(() => {
+    return () => {
+      stopProgressLoop();
+      if (finishTimerRef.current) clearTimeout(finishTimerRef.current);
+    };
+  }, [stopProgressLoop]);
 
   useEffect(() => {
     if (!deepLink) return;
@@ -385,6 +436,8 @@ export function ScanForm({
   function cancelScan() {
     cancelledRef.current = true;
     abortRef.current?.abort();
+    stopProgressLoop();
+    dispatchProgress({ type: "CANCEL" });
     markBusy(false);
     setError(t("scan.cancelled"));
   }
@@ -395,6 +448,9 @@ export function ScanForm({
     const ac = new AbortController();
     abortRef.current = ac;
     markBusy(true);
+    startProgressLoop();
+    const startedAt = performance.now();
+    const MIN_PROGRESS_MS = 900;
     try {
       const payload =
         mode === "url"
@@ -429,26 +485,55 @@ export function ScanForm({
       });
 
       if (cancelledRef.current || ac.signal.aborted) {
+        stopProgressLoop();
+        dispatchProgress({ type: "CANCEL" });
         setError(t("scan.cancelled"));
         return;
       }
 
       if (!result.ok) {
+        stopProgressLoop();
+        dispatchProgress({ type: "ERROR" });
         setError(result.error);
         return;
       }
+
+      const elapsed = performance.now() - startedAt;
+      if (elapsed < MIN_PROGRESS_MS) {
+        await new Promise((r) => setTimeout(r, MIN_PROGRESS_MS - elapsed));
+      }
+      if (cancelledRef.current || ac.signal.aborted) {
+        stopProgressLoop();
+        dispatchProgress({ type: "CANCEL" });
+        setError(t("scan.cancelled"));
+        return;
+      }
+
+      stopProgressLoop();
+      dispatchProgress({ type: "COMPLETE" });
       await historySave(result.blueprint);
+
+      await new Promise<void>((resolve) => {
+        finishTimerRef.current = setTimeout(() => {
+          dispatchProgress({ type: "FINISH_HOLD_DONE" });
+          resolve();
+        }, SCAN_FINISH_HOLD_MS);
+      });
+
       onScanned(result.blueprint);
     } catch (e) {
+      stopProgressLoop();
       if (
         cancelledRef.current ||
         ac.signal.aborted ||
         (e instanceof Error &&
           (e.name === "AbortError" || /abort|zrušen/i.test(e.message)))
       ) {
+        dispatchProgress({ type: "CANCEL" });
         setError(t("scan.cancelled"));
         return;
       }
+      dispatchProgress({ type: "ERROR" });
       setError(e instanceof Error ? e.message : t("scan.failed"));
     } finally {
       if (abortRef.current === ac) abortRef.current = null;
@@ -456,8 +541,17 @@ export function ScanForm({
     }
   }
 
+  const showProgress =
+    progress.phase === "running" || progress.phase === "finishing";
+
   return (
-    <div className={cn("w-full", compact ? "" : "panel p-5 sm:p-6")}>
+    <div className={cn("w-full relative", compact ? "" : "panel p-5 sm:p-6")}>
+      <ScanProgressOverlay
+        active={showProgress}
+        percent={progress.percent}
+        finishing={progress.phase === "finishing"}
+      />
+
       {!compact && (
         <div className="mb-5 flex flex-col gap-1">
           <h2 className="text-lg font-semibold tracking-tight">{t("scan.title")}</h2>
@@ -666,7 +760,7 @@ export function ScanForm({
               size="lg"
               variant="outline"
               onClick={cancelScan}
-              className="w-full sm:w-auto min-w-[120px] border-danger/40 text-danger hover:bg-danger/10"
+              className="w-full sm:w-auto min-w-[120px] border-danger/40 text-danger hover:bg-danger/10 relative z-20"
             >
               <XCircle className="size-4" />
               {t("scan.cancel")}
@@ -676,7 +770,7 @@ export function ScanForm({
             size="lg"
             disabled={isBusy || (mode === "url" ? !url.trim() : !html.trim())}
             onClick={() => void runScan()}
-            className="w-full min-w-[160px] bg-accent text-accent-fg hover:bg-accent/90 font-semibold"
+            className="w-full min-w-[160px] bg-accent text-accent-fg hover:bg-accent/90 font-semibold relative z-20"
           >
             {isBusy ? (
               <>

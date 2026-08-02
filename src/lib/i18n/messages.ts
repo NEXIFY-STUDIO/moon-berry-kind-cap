@@ -26,6 +26,7 @@ export const messages = {
     "scan.cta": "Create blueprint",
     "scan.cancel": "Cancel",
     "scan.busy": "Scanning…",
+    "scan.progress": "Scanning in progress…",
     "scan.cancelled": "Scan cancelled.",
     "scan.failed": "Scan failed.",
 
@@ -324,6 +325,7 @@ export const messages = {
     "scan.cta": "Vytvoriť blueprint",
     "scan.cancel": "Zrušiť",
     "scan.busy": "Skenujem…",
+    "scan.progress": "Skenovanie prebieha…",
     "scan.cancelled": "Sken bol zrušený.",
     "scan.failed": "Sken zlyhal.",
 

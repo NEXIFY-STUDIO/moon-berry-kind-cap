@@ -77,7 +77,14 @@ export const Route = createRootRoute({
         href: "/favicon-16x16.png",
       },
       { rel: "icon", href: "/favicon.ico", sizes: "any" },
-      { rel: "manifest", href: "/site.webmanifest" },
+      // Auth-gated preview proxies 401 credential-less manifest fetches.
+      // Spec: https://www.w3.org/TR/appmanifest/#using-a-link-element-to-link-to-a-manifest
+      {
+        rel: "manifest",
+        href: "/site.webmanifest",
+        crossOrigin: "use-credentials",
+      },
+
     ],
     scripts: buildHeadJsonLdScripts(),
   }),
