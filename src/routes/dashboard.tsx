@@ -110,7 +110,7 @@ function DashboardPage() {
           <p className="mono">/dashboard</p>
           <p>
             {sk
-              ? "Po schválení ostane ostrá verzia"
+              ? "Po schválení sa stane ostrou verziou"
               : "Promote when UI is approved"}
           </p>
         </div>
