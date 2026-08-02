@@ -1,0 +1,312 @@
+{
+  "components": [
+    {
+      "id": "comp-form-login",
+      "instances": 1,
+      "kind": "form",
+      "name": "login form",
+      "sample": {
+        "action": "https://sample.example/api/login",
+        "category": "login",
+        "method": "POST"
+      },
+      "varyingProps": [
+        "csrf",
+        "email",
+        "password"
+      ]
+    }
+  ],
+  "content": {
+    "images": [
+      {
+        "slot": "image.01",
+        "url": "https://sample.example/images/hero-2x.png"
+      },
+      {
+        "slot": "image.02",
+        "url": "https://sample.example/images/hero.png"
+      }
+    ],
+    "texts": [
+      {
+        "slot": "heading.h1.01",
+        "text": "Vitaj v Sample App"
+      },
+      {
+        "slot": "heading.h2.02",
+        "text": "Funkcie"
+      },
+      {
+        "slot": "heading.h3.03",
+        "text": "Pätička"
+      },
+      {
+        "slot": "meta.description",
+        "text": "Ukážková appka pre blueprint testy"
+      },
+      {
+        "slot": "meta.title",
+        "text": "Sample Blueprint App"
+      },
+      {
+        "slot": "nav.link.01",
+        "text": "Domov"
+      },
+      {
+        "slot": "nav.link.02",
+        "text": "Cenník"
+      },
+      {
+        "slot": "nav.link.03",
+        "text": "Súkromie"
+      }
+    ]
+  },
+  "designTokens": {
+    "colors": [
+      {
+        "role": "bg",
+        "sources": [
+          "design.colors"
+        ],
+        "value": "oklch(0.85 0.02 250)"
+      },
+      {
+        "role": "surface",
+        "sources": [
+          "design.colors"
+        ],
+        "value": "rgba(0, 0, 0, 0.4)"
+      },
+      {
+        "role": "text",
+        "sources": [
+          "css:--color-accent",
+          "design.colors"
+        ],
+        "value": "#c8ccd4"
+      },
+      {
+        "role": "muted",
+        "sources": [
+          "design.colors"
+        ],
+        "value": "rgba(244, 244, 245, 1)"
+      },
+      {
+        "role": "accent",
+        "sources": [
+          "css:--color-bg",
+          "design.colors",
+          "meta.themeColor"
+        ],
+        "value": "#0a0a0b"
+      }
+    ],
+    "radii": [
+      "16px"
+    ],
+    "shadows": [
+      "0 8px 24px rgba(0, 0, 0, 0.4)"
+    ],
+    "spacing": [
+      "0",
+      "12px",
+      "16px",
+      "24px"
+    ],
+    "typography": {
+      "fontFamilies": [
+        "Inter"
+      ],
+      "scale": [
+        {
+          "fontFamily": null,
+          "fontSize": null,
+          "fontWeight": null,
+          "letterSpacing": null,
+          "lineHeight": null,
+          "step": "body"
+        },
+        {
+          "fontFamily": null,
+          "fontSize": null,
+          "fontWeight": null,
+          "letterSpacing": null,
+          "lineHeight": null,
+          "step": "button"
+        },
+        {
+          "fontFamily": null,
+          "fontSize": null,
+          "fontWeight": null,
+          "letterSpacing": null,
+          "lineHeight": null,
+          "step": "h1"
+        },
+        {
+          "fontFamily": null,
+          "fontSize": null,
+          "fontWeight": null,
+          "letterSpacing": null,
+          "lineHeight": null,
+          "step": "h2"
+        },
+        {
+          "fontFamily": null,
+          "fontSize": null,
+          "fontWeight": null,
+          "letterSpacing": null,
+          "lineHeight": null,
+          "step": "h3"
+        },
+        {
+          "fontFamily": null,
+          "fontSize": null,
+          "fontWeight": null,
+          "letterSpacing": null,
+          "lineHeight": null,
+          "step": "h4"
+        }
+      ]
+    }
+  },
+  "gaps": [
+    {
+      "category": "api",
+      "code": "NO_API",
+      "id": "gap-api",
+      "message": "No API contracts or endpoints were reverse-engineered — do not invent fetch URLs or schemas."
+    },
+    {
+      "category": "auth",
+      "code": "NO_AUTH",
+      "id": "gap-auth",
+      "message": "Auth flows are not verified — do not invent login providers, tokens, or session rules."
+    },
+    {
+      "category": "hover",
+      "code": "NO_HOVER_STATES",
+      "id": "gap-hover",
+      "message": "Hover / focus / active styles are not captured — do not invent fancy micro-interactions."
+    },
+    {
+      "category": "js_behavior",
+      "code": "NO_JS_BEHAVIOR",
+      "id": "gap-js",
+      "message": "Client-side JS behavior (modals, carousels, filters) is unknown — keep static structure only."
+    },
+    {
+      "category": "routing",
+      "code": "NO_ROUTING",
+      "id": "gap-routing",
+      "message": "App Router / client routes beyond crawled URLs are unknown — only use listed paths."
+    },
+    {
+      "category": "layout",
+      "code": "THIN_HTML",
+      "id": "gap-thin",
+      "message": "SPA shell / thin HTML detected — DOM content is incomplete without headless render."
+    }
+  ],
+  "id": "rebuild_static-sample",
+  "layout": {
+    "sections": [
+      {
+        "breakpointHints": [],
+        "headings": [
+          "Vitaj v Sample App",
+          "Funkcie"
+        ],
+        "id": "sec-01",
+        "label": "banner",
+        "order": 0,
+        "role": "nav"
+      },
+      {
+        "breakpointHints": [],
+        "headings": [
+          "Vitaj v Sample App",
+          "Funkcie"
+        ],
+        "id": "sec-02",
+        "label": "nav",
+        "order": 1,
+        "role": "nav"
+      },
+      {
+        "breakpointHints": [],
+        "headings": [
+          "Vitaj v Sample App",
+          "Funkcie"
+        ],
+        "id": "sec-03",
+        "label": "page-main",
+        "order": 2,
+        "role": "content"
+      },
+      {
+        "breakpointHints": [],
+        "headings": [
+          "Vitaj v Sample App",
+          "Funkcie"
+        ],
+        "id": "sec-04",
+        "label": "form",
+        "order": 3,
+        "role": "form"
+      },
+      {
+        "breakpointHints": [],
+        "headings": [
+          "Vitaj v Sample App",
+          "Funkcie"
+        ],
+        "id": "sec-05",
+        "label": "Tailwind-ish",
+        "order": 4,
+        "role": "grid"
+      },
+      {
+        "breakpointHints": [],
+        "headings": [
+          "Vitaj v Sample App",
+          "Funkcie"
+        ],
+        "id": "sec-06",
+        "label": "site-footer",
+        "order": 5,
+        "role": "footer"
+      }
+    ]
+  },
+  "schemaVersion": "1.0.0",
+  "source": {
+    "blueprintId": "static-sample",
+    "description": "Ukážková appka pre blueprint testy",
+    "finalUrl": "https://sample.example/app",
+    "isThinHtml": true,
+    "language": "sk",
+    "sourceUrl": "https://sample.example/app",
+    "tech": [
+      {
+        "confidence": "high",
+        "name": "Google Analytics"
+      },
+      {
+        "confidence": "high",
+        "name": "Next.js"
+      },
+      {
+        "confidence": "high",
+        "name": "PWA"
+      },
+      {
+        "confidence": "high",
+        "name": "React"
+      }
+    ],
+    "title": "Sample Blueprint App"
+  }
+}

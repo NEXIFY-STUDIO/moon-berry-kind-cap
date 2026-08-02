@@ -111,7 +111,7 @@ export async function fetchPageWithFallback(opts: {
   const url = opts.url;
 
   if (opts.signal?.aborted) {
-    throw Object.assign(new Error("Sken bol zrušený."), { name: "AbortError" });
+    throw Object.assign(new Error("Scan cancelled."), { name: "AbortError" });
   }
 
   // 1) Headless
@@ -119,7 +119,7 @@ export async function fetchPageWithFallback(opts: {
     try {
       const r = await renderFn(url, { signal: opts.signal, timeoutMs: 30_000 });
       if (r.aborted) {
-        throw Object.assign(new Error("Sken bol zrušený."), {
+        throw Object.assign(new Error("Scan cancelled."), {
           name: "AbortError",
         });
       }
@@ -152,7 +152,7 @@ export async function fetchPageWithFallback(opts: {
   }
 
   if (opts.signal?.aborted) {
-    throw Object.assign(new Error("Sken bol zrušený."), { name: "AbortError" });
+    throw Object.assign(new Error("Scan cancelled."), { name: "AbortError" });
   }
 
   // 2) HTTP static
@@ -206,7 +206,7 @@ export async function fetchPageWithFallback(opts: {
   }
 
   if (opts.signal?.aborted) {
-    throw Object.assign(new Error("Sken bol zrušený."), { name: "AbortError" });
+    throw Object.assign(new Error("Scan cancelled."), { name: "AbortError" });
   }
 
   // 3) Wayback
@@ -216,7 +216,7 @@ export async function fetchPageWithFallback(opts: {
       if (!snap) {
         partialErrors.push(pe("wayback", "No Wayback snapshot found"));
         throw new Error(
-          "Live URL nedostupná a Wayback Machine nemá snapshot. Vlož HTML manuálne.",
+          "Live URL unavailable and Wayback Machine has no snapshot. Paste HTML manually.",
         );
       }
       const page = await httpFn(snap.url, opts.signal);
@@ -224,7 +224,7 @@ export async function fetchPageWithFallback(opts: {
         partialErrors.push(
           pe("wayback", `Wayback HTTP ${page.status}`, page.status),
         );
-        throw new Error(`Wayback snapshot vrátil HTTP ${page.status}.`);
+        throw new Error(`Wayback snapshot returned HTTP ${page.status}.`);
       }
       return {
         html: page.text.slice(0, MAX_HTML_BYTES),

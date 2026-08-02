@@ -95,8 +95,8 @@ async function main() {
       await page.goto(BASE, { waitUntil: "networkidle", timeout: TIMEOUT });
       const title = await page.title();
       const hasHero = await page.getByRole("heading", { name: /Frontend blueprint|Zadaj URL/i }).count();
-      const hasScan = await page.getByRole("button", { name: /Vytvoriť blueprint/i }).count();
-      const hasCompare = await page.getByText(/Porovnať blueprinty/i).count();
+      const hasScan = await page.getByRole("button", { name: /Create blueprint|Vytvoriť blueprint/i }).count();
+      const hasCompare = await page.getByText(/Compare Blueprints|Porovnať blueprinty/i).count();
       await page.screenshot({ path: `${OUT_DIR}/01-home.png`, fullPage: true });
       record(
         "smoke.home",
@@ -110,8 +110,8 @@ async function main() {
       const t = Date.now();
       await page.goto(BASE, { waitUntil: "networkidle", timeout: TIMEOUT });
       await configureFastScan(page);
-      await page.getByPlaceholder("https://moja-appka.com").fill("https://example.com");
-      await page.getByRole("button", { name: /Vytvoriť blueprint/i }).click();
+      await page.getByPlaceholder("https://my-app.com").fill("https://example.com");
+      await page.getByRole("button", { name: /Create blueprint|Vytvoriť blueprint/i }).click();
       await page.waitForSelector("text=BLUEPRINT_", { timeout: TIMEOUT });
       const body = await page.locator("body").innerText();
       const idMatch = body.match(/BLUEPRINT_[A-Z0-9_]+/i);
@@ -127,8 +127,8 @@ async function main() {
     await withPage(browser, async (page, errs) => {
       const t = Date.now();
       await page.goto(BASE, { waitUntil: "networkidle", timeout: TIMEOUT });
-      await page.getByRole("tab", { name: /Vložiť HTML/i }).click();
-      await page.getByPlaceholder("https://povodna-domena.sk").fill("https://offline.example");
+      await page.getByRole("tab", { name: /Paste HTML|Vložiť HTML/i }).click();
+      await page.getByPlaceholder("https://original-domain.com").fill("https://offline.example");
       const html = `<!DOCTYPE html><html lang="sk"><head><title>Offline Restore</title>
         <meta name="description" content="paste test"/><style>:root{--c:#111}</style>
         </head><body><h1 id="main">Obnovená appka</h1>
@@ -136,7 +136,7 @@ async function main() {
         <form action="/login" method="post"><input name="user" required/></form>
         </body></html>`;
       await page.locator("textarea").fill(html);
-      await page.getByRole("button", { name: /Vytvoriť blueprint/i }).click();
+      await page.getByRole("button", { name: /Create blueprint|Vytvoriť blueprint/i }).click();
       await page.waitForSelector("text=Offline Restore", { timeout: TIMEOUT });
       const body = await page.locator("body").innerText();
       await page.screenshot({ path: `${OUT_DIR}/03-html-scan.png`, fullPage: true });
@@ -152,17 +152,17 @@ async function main() {
       const t = Date.now();
       await page.goto(BASE, { waitUntil: "networkidle", timeout: TIMEOUT });
       await configureFastScan(page);
-      await page.getByPlaceholder("https://moja-appka.com").fill("https://example.com");
-      await page.getByRole("button", { name: /Vytvoriť blueprint/i }).click();
+      await page.getByPlaceholder("https://my-app.com").fill("https://example.com");
+      await page.getByRole("button", { name: /Create blueprint|Vytvoriť blueprint/i }).click();
       await page.waitForSelector("text=BLUEPRINT_", { timeout: TIMEOUT });
 
       const tabs = [
-        { name: /Prehľad/i, expect: /Tech stack|SEO|Obmedzenia/i },
-        { name: /Dizajn/i, expect: /Farby|Fonty|CSS/i },
-        { name: /Štruktúra/i, expect: /DOM outline|Nadpisy|Odkazy/i },
-        { name: /Stránky/i, expect: /Crawl mapa|Primary/i },
-        { name: /Assety/i, expect: /Assety|captured/i },
-        { name: /Náhľad 1:1/i, expect: /Náhľad zachyteného/i },
+        { name: /Overview|Prehľad/i, expect: /Tech stack|SEO|Limitations|Obmedzenia/i },
+        { name: /Design|Dizajn/i, expect: /Colors|Fonts|CSS|Farby|Fonty/i },
+        { name: /Structure|Štruktúra/i, expect: /DOM outline|Headings|Links|Nadpisy|Odkazy/i },
+        { name: /Pages|Stránky/i, expect: /Crawl map|Crawl mapa|Primary/i },
+        { name: /Assets|Assety/i, expect: /Assets|Assety|captured/i },
+        { name: /1:1 Preview|Náhľad 1:1/i, expect: /Captured frontend|Náhľad zachyteného|preview/i },
         { name: /^JSON$/i, expect: /Blueprint JSON|version/i },
       ];
       let pass = 0;
@@ -180,12 +180,12 @@ async function main() {
       const t = Date.now();
       await page.goto(BASE, { waitUntil: "networkidle", timeout: TIMEOUT });
       await configureFastScan(page);
-      await page.getByPlaceholder("https://moja-appka.com").fill("https://example.com");
-      await page.getByRole("button", { name: /Vytvoriť blueprint/i }).click();
+      await page.getByPlaceholder("https://my-app.com").fill("https://example.com");
+      await page.getByRole("button", { name: /Create blueprint|Vytvoriť blueprint/i }).click();
       await page.waitForSelector("text=BLUEPRINT_", { timeout: TIMEOUT });
       await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
       const jsonBtn = page.getByRole("button", { name: /^JSON$/i });
-      const dlJson = page.getByRole("button", { name: /Stiahnuť JSON/i });
+      const dlJson = page.getByRole("button", { name: /Download JSON|Stiahnuť JSON/i });
       const zipBtn = page.getByRole("button", { name: /Export ZIP/i });
       const ok =
         (await jsonBtn.count()) > 0 &&
@@ -200,14 +200,14 @@ async function main() {
       const t = Date.now();
       await page.goto(BASE, { waitUntil: "networkidle", timeout: TIMEOUT });
       await configureFastScan(page);
-      await page.getByPlaceholder("https://moja-appka.com").fill("https://example.com");
-      await page.getByRole("button", { name: /Vytvoriť blueprint/i }).click();
+      await page.getByPlaceholder("https://my-app.com").fill("https://example.com");
+      await page.getByRole("button", { name: /Create blueprint|Vytvoriť blueprint/i }).click();
       await page.waitForSelector("text=BLUEPRINT_", { timeout: TIMEOUT });
       // second scan slightly different path for history variety - just reload check
       await page.reload({ waitUntil: "networkidle" });
       const body = await page.locator("body").innerText();
-      const hasHistory = /História \(\d+\)/i.test(body);
-      const hasCompare = /Porovnať blueprinty/i.test(body);
+      const hasHistory = /History \(\d+\)|História \(\d+\)/i.test(body);
+      const hasCompare = /Compare Blueprints|Porovnať blueprinty/i.test(body);
       await page.screenshot({ path: `${OUT_DIR}/06-history.png`, fullPage: true });
       record(
         "smoke.history_compare",
@@ -226,7 +226,7 @@ async function main() {
         clientWidth: document.documentElement.clientWidth,
       }));
       const noHOverflow = overflow.scrollWidth <= overflow.clientWidth + 2;
-      const scanVisible = await page.getByRole("button", { name: /Vytvoriť blueprint/i }).isVisible();
+      const scanVisible = await page.getByRole("button", { name: /Create blueprint|Vytvoriť blueprint/i }).isVisible();
       await page.screenshot({ path: `${OUT_DIR}/07-mobile.png`, fullPage: true });
       record(
         "smoke.mobile",

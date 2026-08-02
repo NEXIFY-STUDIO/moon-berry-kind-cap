@@ -6,7 +6,7 @@ import type { Blueprint } from "./types";
  */
 export function normalizeImportedBlueprint(raw: unknown): Blueprint {
   if (!raw || typeof raw !== "object") {
-    throw new Error("Neplatný formát blueprintu");
+    throw new Error("Invalid blueprint format");
   }
   const parsed = raw as Partial<Blueprint> & {
     id?: string;
@@ -18,7 +18,7 @@ export function normalizeImportedBlueprint(raw: unknown): Blueprint {
   };
 
   if (!parsed.id || !parsed.version || !parsed.html) {
-    throw new Error("Neplatný formát blueprintu");
+    throw new Error("Invalid blueprint format");
   }
 
   const bp = parsed as Blueprint;
@@ -40,7 +40,7 @@ export function normalizeImportedBlueprint(raw: unknown): Blueprint {
   if (bp.rendered == null) bp.rendered = false;
   if (bp.waybackUrl === undefined) bp.waybackUrl = null;
   if (!bp.stats) {
-    throw new Error("Neplatný formát blueprintu");
+    throw new Error("Invalid blueprint format");
   }
   if (!bp.stats.pageCount) bp.stats.pageCount = 1;
   if (bp.stats.capturedAssetCount == null) {
@@ -104,7 +104,7 @@ export function assertIndexHtmlAssetPaths(indexHtml: string): {
   ].map((m) => m[1]);
 
   if (scriptSrcs.length === 0) {
-    issues.push("Žiadne <script src> v index.html — prod bundle môže byť prázdny.");
+    issues.push("No <script src> in index.html — production bundle may be empty.");
   }
   for (const src of scriptSrcs) {
     if (src.startsWith("http://") || src.startsWith("https://")) continue;
@@ -114,7 +114,7 @@ export function assertIndexHtmlAssetPaths(indexHtml: string): {
     }
     // absolute path preferred; relative ./assets is ok
     if (!src.includes("assets") && !src.startsWith("/")) {
-      issues.push(`Podozrivý script path (môže 404 → MIME text/html): ${src}`);
+      issues.push(`Suspicious script path (may 404 → MIME text/html): ${src}`);
     }
   }
   return { ok: issues.length === 0, scriptSrcs, cssHrefs, issues };

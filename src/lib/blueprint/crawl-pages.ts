@@ -405,11 +405,12 @@ export async function harvestCrawlPages(opts: {
   };
 }
 
-/** Slovak UI badge label for partial / aborted scans */
+/** UI badge label for partial / aborted scans */
 export function partialScanBadgeLabel(
   scanStatus: ScanStatus | undefined,
   partialStats: PartialStats | null | undefined,
   primaryIncluded = true,
+  locale: "en" | "sk" = "en",
 ): string | null {
   if (!scanStatus || scanStatus === "complete") return null;
   const s = partialStats?.succeeded ?? 0;
@@ -417,8 +418,15 @@ export function partialScanBadgeLabel(
   const t = partialStats?.totalAttempted ?? s + f;
   const saved = primaryIncluded ? s + 1 : s;
   const total = primaryIncluded ? t + 1 : t;
-  if (scanStatus === "aborted") {
-    return `Prerušený sken: Uložených ${saved}/${Math.max(total, saved)} stránok (${f} zlyhala)`;
+  const maxTotal = Math.max(total, saved);
+  if (locale === "sk") {
+    if (scanStatus === "aborted") {
+      return `Prerušený sken: Uložených ${saved}/${maxTotal} stránok (${f} zlyhala)`;
+    }
+    return `Čiastočný sken: Uložených ${saved}/${maxTotal} stránok (${f} zlyhala)`;
   }
-  return `Čiastočný sken: Uložených ${saved}/${Math.max(total, saved)} stránok (${f} zlyhala)`;
+  if (scanStatus === "aborted") {
+    return `Aborted scan: saved ${saved}/${maxTotal} pages (${f} failed)`;
+  }
+  return `Partial scan: saved ${saved}/${maxTotal} pages (${f} failed)`;
 }

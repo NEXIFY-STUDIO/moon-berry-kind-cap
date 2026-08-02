@@ -72,6 +72,6 @@ describe("thin HTML / SPA shell detection", () => {
     });
     expect(bp.isThinHtml).toBe(true);
     expect(bp.thinHtmlReasons?.length).toBeGreaterThan(0);
-    expect(bp.notes.some((n) => /SPA|shell|Tenký|chudob/i.test(n))).toBe(true);
+    expect(bp.notes.some((n) => /SPA|shell|Thin|Tenký|chudob|incomplete/i.test(n))).toBe(true);
   });
 });

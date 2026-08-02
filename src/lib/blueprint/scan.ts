@@ -79,16 +79,16 @@ export function assertPublicUrl(raw: string): URL {
   try {
     url = new URL(raw);
   } catch {
-    throw new Error("Neplatná URL. Použi formát https://example.com");
+    throw new Error("Invalid URL. Use format https://example.com");
   }
   if (url.protocol !== "http:" && url.protocol !== "https:") {
-    throw new Error("Povolené sú len http a https URL.");
+    throw new Error("Only http and https URLs are allowed.");
   }
   const host = url.hostname.toLowerCase();
   if (BLOCKED_HOSTS.has(host) || isPrivateIp(host)) {
     throw new Error(
-      "Lokálne a privátne adresy nie je možné skenovať zo servera. " +
-        "Ak máš HTML uložené lokálne, vlož ho v režime „Vložiť HTML“.",
+      "Local and private addresses cannot be scanned from the server. " +
+        "If you have HTML stored locally, paste it in “Paste HTML” mode.",
     );
   }
   return url;
@@ -761,11 +761,11 @@ export async function scanToBlueprint(input: ScanRequest): Promise<Blueprint> {
   const notes: string[] = [];
   const partialErrors: PartialError[] = [];
   const limitations = [
-    "Blueprint je frontend snapshot verejného obsahu (HTML/CSS/assety/stránky) — nie klon servera, DB ani privátnych API.",
-    "Headless render pomáha pri SPA, ale stále nevidí dáta za loginom ani WebSocket/API payloady.",
-    "Crawl je same-origin s limitom stránok; asset capture má limity veľkosti.",
-    "Lokálne URL (localhost) skenuj cez „Vložiť HTML“.",
-    "WP/JetEngine mód číta len verejné REST endpointy a DOM (nie wp-admin / privátne CCT).",
+    "Blueprint is a frontend snapshot of public content (HTML/CSS/assets/pages) — not a server, DB, or private API clone.",
+    "Headless render helps with SPAs, but still cannot see data behind login or WebSocket/API payloads.",
+    "Crawl is same-origin with a page limit; asset capture has size limits.",
+    "Scan local URLs (localhost) via “Paste HTML”.",
+    "WP/JetEngine mode only reads public REST endpoints and the DOM (not wp-admin / private CCT).",
   ];
 
 
@@ -785,7 +785,7 @@ export async function scanToBlueprint(input: ScanRequest): Promise<Blueprint> {
     primaryHtml = input.html.slice(0, MAX_HTML_BYTES);
     sourceUrl = input.baseUrl?.trim() || null;
     finalUrl = sourceUrl;
-    notes.push("Blueprint z vloženého HTML (offline / bez prístupu k URL).");
+    notes.push("Blueprint from pasted HTML (offline / no URL access).");
   } else if (input.url?.trim()) {
     const url = assertPublicUrl(input.url.trim());
     sourceUrl = url.toString();
@@ -805,17 +805,17 @@ export async function scanToBlueprint(input: ScanRequest): Promise<Blueprint> {
     source = pipe.source;
     partialErrors.push(...pipe.partialErrors);
     if (pipe.stageUsed === "headless") {
-      notes.push("Primárna stránka zachytená headless renderom (Playwright shield).");
+      notes.push("Primary page captured via headless render (Playwright shield).");
     } else if (pipe.stageUsed === "http" && pipe.partialErrors.some((e) => e.stage === "headless")) {
-      notes.push("Headless zlyhal/timeout — pokračujem HTTP static fetch.");
+      notes.push("Headless failed/timeout — falling back to HTTP static fetch.");
     } else if (pipe.source === "wayback") {
-      notes.push(`Obnovené z archive.org (fallback chain).`);
+      notes.push(`Restored from archive.org (fallback chain).`);
     }
     for (const e of pipe.partialErrors) {
       notes.push(`[${e.stage}] ${e.message}`);
     }
   } else {
-    throw new Error("Zadaj URL alebo vlož HTML.");
+    throw new Error("Enter a URL or paste HTML.");
   }
 
   const base = finalUrl || sourceUrl || "https://blueprint.local/";
@@ -894,7 +894,7 @@ export async function scanToBlueprint(input: ScanRequest): Promise<Blueprint> {
       }
     } catch (err) {
       notes.push(
-        `WP/JetEngine extract zlyhal: ${err instanceof Error ? err.message : "error"}`,
+        `WP/JetEngine extract failed: ${err instanceof Error ? err.message : "error"}`,
       );
     }
   } else if (wantWp && source === "html") {
@@ -1033,14 +1033,14 @@ export async function scanToBlueprint(input: ScanRequest): Promise<Blueprint> {
 
       if (crawl.failedUrls.length || crawl.aborted) {
         notes.push(
-          `Crawl recovery: ${crawl.scannedPages.length} OK, ${crawl.failedUrls.length} zlyhaných` +
-            (crawl.aborted ? " (prerušené)" : "") +
+          `Crawl recovery: ${crawl.scannedPages.length} OK, ${crawl.failedUrls.length} failed` +
+            (crawl.aborted ? " (aborted)" : "") +
             `. scanStatus=${crawl.scanStatus}.`,
         );
       }
       if (pages.length) {
         notes.push(
-          `Crawl: ${pages.length + 1} same-origin stránok (limit ${maxPages})${
+          `Crawl: ${pages.length + 1} same-origin pages (limit ${maxPages})${
             wordpress?.sitemapUrls.length ? " + sitemap/nav seed" : ""
           }.`,
         );
@@ -1068,10 +1068,10 @@ export async function scanToBlueprint(input: ScanRequest): Promise<Blueprint> {
         ],
       };
       notes.push(
-        `Crawl fatal recovery: uložených ${scannedPagesCheckpoint.length} stránok pred pádom.`,
+        `Crawl fatal recovery: saved ${scannedPagesCheckpoint.length} pages before crash.`,
       );
       limitations.push(
-        "Crawl bol prerušený fatálnou chybou — blueprint je čiastočný (partial).",
+        "Crawl was interrupted by a fatal error — blueprint is partial.",
       );
     }
   }
@@ -1101,7 +1101,7 @@ export async function scanToBlueprint(input: ScanRequest): Promise<Blueprint> {
       });
       assets = cap.assets;
       const captured = assets.filter((a) => a.captured).length;
-      if (captured) notes.push(`Stiahnutých assetov do blueprintu: ${captured}.`);
+      if (captured) notes.push(`Assets downloaded into blueprint: ${captured}.`);
       for (const w of cap.warnings.slice(0, 20)) {
         partialErrors.push({
           stage: "assets",
@@ -1111,12 +1111,12 @@ export async function scanToBlueprint(input: ScanRequest): Promise<Blueprint> {
       }
       if (cap.skippedOversize) {
         notes.push(
-          `Preskočených ${cap.skippedOversize} assetov nad limit veľkosti (memory guard).`,
+          `${cap.skippedOversize} assets skipped over size limit (memory guard).`,
         );
       }
       if (cap.skippedBudget) {
         notes.push(
-          `Preskočených ${cap.skippedBudget} assetov pre celkový budget ZIP (50 MB).`,
+          `${cap.skippedBudget} assets skipped due to ZIP budget (50 MB).`,
         );
       }
     } catch (err) {
@@ -1125,7 +1125,7 @@ export async function scanToBlueprint(input: ScanRequest): Promise<Blueprint> {
         message: err instanceof Error ? err.message : String(err),
         at: new Date().toISOString(),
       });
-      notes.push("Asset capture zlyhal — blueprint pokračuje bez binárnych assetov.");
+      notes.push("Asset capture failed — blueprint continues without binary assets.");
     }
   }
 
@@ -1205,7 +1205,7 @@ export async function scanToBlueprint(input: ScanRequest): Promise<Blueprint> {
       if (!notes.includes(r)) notes.push(r);
     }
     limitations.push(
-      "Thin HTML / SPA shell — blueprint môže byť neúplný bez headless renderu.",
+      "Thin HTML / SPA shell — blueprint may be incomplete without headless render.",
     );
   }
 
@@ -1275,7 +1275,7 @@ export async function scanToBlueprint(input: ScanRequest): Promise<Blueprint> {
     );
   } catch (err) {
     notes.push(
-      `Elementor compile zlyhal: ${err instanceof Error ? err.message : "error"}`,
+      `Elementor compile failed: ${err instanceof Error ? err.message : "error"}`,
     );
     blueprint.elementorTemplate = null;
   }

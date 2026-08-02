@@ -12,7 +12,7 @@ export type ApiErrorBody = {
 
 export type ApiSuccess<T> = { ok: true } & T;
 
-export function toApiError(err: unknown, fallback = "Neznáma chyba"): ApiErrorBody {
+export function toApiError(err: unknown, fallback = "Unknown error"): ApiErrorBody {
   if (err && typeof err === "object" && "ok" in err && (err as { ok: unknown }).ok === false) {
     return err as ApiErrorBody;
   }

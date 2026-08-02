@@ -8,25 +8,57 @@ vi.mock("sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn(), message: vi.fn() },
 }));
 
-const { downloadElementorTemplate, exportBlueprintZip, downloadText } = vi.hoisted(() => ({
-  downloadElementorTemplate: vi.fn(() => ({
-    version: "0.4",
-    title: "t",
-    type: "page",
-    content: [],
-    page_settings: [],
-    _blueprint: {
-      widgetCount: 2,
-      nodeCount: 3,
-      notes: [],
-      sourceId: "x",
-      sourceUrl: null,
-      compiledAt: "",
-    },
-  })),
-  exportBlueprintZip: vi.fn(async () => {}),
-  downloadText: vi.fn(),
-}));
+const {
+  downloadElementorTemplate,
+  exportBlueprintZip,
+  downloadText,
+  prepareJsonExport,
+  prepareElementorExport,
+  prepareZipExport,
+  triggerBlobDownload,
+} = vi.hoisted(() => {
+  const blob = new Blob(["x"], { type: "application/json" });
+  const prepared = {
+    kind: "json" as const,
+    filename: "t.json",
+    mime: "application/json",
+    size: 1,
+    blob,
+  };
+  return {
+    downloadElementorTemplate: vi.fn(() => ({
+      version: "0.4",
+      title: "t",
+      type: "page",
+      content: [],
+      page_settings: [],
+      _blueprint: {
+        widgetCount: 2,
+        nodeCount: 3,
+        notes: [],
+        sourceId: "x",
+        sourceUrl: null,
+        compiledAt: "",
+      },
+    })),
+    exportBlueprintZip: vi.fn(async () => {}),
+    downloadText: vi.fn(),
+    prepareJsonExport: vi.fn(() => ({ ...prepared, kind: "json" as const })),
+    prepareElementorExport: vi.fn(() => ({
+      ...prepared,
+      kind: "elementor" as const,
+      filename: "elementor-template-import.json",
+      meta: { widgetCount: 2 },
+    })),
+    prepareZipExport: vi.fn(async () => ({
+      ...prepared,
+      kind: "zip" as const,
+      filename: "t.zip",
+      mime: "application/zip",
+    })),
+    triggerBlobDownload: vi.fn(),
+  };
+});
 
 vi.mock("@/lib/blueprint/storage", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/blueprint/storage")>();
@@ -35,6 +67,10 @@ vi.mock("@/lib/blueprint/storage", async (importOriginal) => {
     downloadElementorTemplate,
     exportBlueprintZip,
     downloadText,
+    prepareJsonExport,
+    prepareElementorExport,
+    prepareZipExport,
+    triggerBlobDownload,
   };
 });
 
@@ -250,12 +286,12 @@ describe("UI · BlueprintView", () => {
       <BlueprintView blueprint={richBlueprint()} />,
     );
     const designTab = [...container.querySelectorAll("button, [role='tab']")].find(
-      (el) => /^Dizajn$|Dizajn/.test((el.textContent || "").trim()) ||
-        /Dizajn/.test(el.textContent || ""),
+      (el) => /^Design$|^Dizajn$|Design|Dizajn/.test((el.textContent || "").trim()) ||
+        /Design|Dizajn/.test(el.textContent || ""),
     );
     expect(designTab).toBeTruthy();
     click(designTab!);
-    expect(container.textContent).toMatch(/Elementor|Farby|Typografia|primary|#111/i);
+    expect(container.textContent).toMatch(/Elementor|Colors|Farby|Typography|Typografia|primary|#111/i);
     unmount();
   });
 
@@ -302,7 +338,7 @@ describe("UI · BlueprintView", () => {
       /Elementor JSON/.test(el.textContent || ""),
     );
     click(tab!);
-    expect(container.textContent).toMatch(/nie je skompilovaný|Template|Elementor/i);
+    expect(container.textContent).toMatch(/not compiled|nie je skompilovaný|Template|Elementor/i);
     unmount();
   });
 
@@ -311,7 +347,7 @@ describe("UI · BlueprintView", () => {
       <BlueprintView blueprint={richBlueprint()} />,
     );
     const tab = [...container.querySelectorAll("button, [role='tab']")].find((el) =>
-      /Štruktúra|Structure|Odkazy|Formul/.test(el.textContent || ""),
+      /Štruktúra|Structure|Links|Odkazy|Form/.test(el.textContent || ""),
     );
     if (tab) click(tab);
     // forms may be on structure tab
@@ -319,44 +355,61 @@ describe("UI · BlueprintView", () => {
     unmount();
   });
 
-  it("download Elementor button calls downloadElementorTemplate", async () => {
+  it("download Elementor button starts export ritual", async () => {
+    vi.useFakeTimers();
     const { container, unmount } = render(
       <BlueprintView blueprint={richBlueprint()} />,
     );
-    const btn = [...container.querySelectorAll("button")].find((b) =>
-      /Elementor JSON|elementor-template/i.test(b.textContent || ""),
-    );
+    const btn = container.querySelector(
+      '[data-testid="export-btn-elementor"]',
+    ) as HTMLButtonElement;
     expect(btn).toBeTruthy();
-    click(btn!);
+    click(btn);
     await flush();
-    expect(downloadElementorTemplate).toHaveBeenCalled();
+    expect(container.querySelector('[data-testid="export-ritual-overlay"]')).toBeTruthy();
+    await vi.advanceTimersByTimeAsync(2200);
+    await flush();
+    expect(prepareElementorExport).toHaveBeenCalled();
+    expect(triggerBlobDownload).toHaveBeenCalled();
+    vi.useRealTimers();
     unmount();
   });
 
-  it("download JSON button uses downloadText", async () => {
+  it("download JSON button starts export ritual", async () => {
+    vi.useFakeTimers();
     const { container, unmount } = render(
       <BlueprintView blueprint={richBlueprint()} />,
     );
-    const btn = [...container.querySelectorAll("button")].find((b) =>
-      /Stiahnuť JSON/.test(b.textContent || ""),
-    );
-    click(btn!);
+    const btn = container.querySelector(
+      '[data-testid="export-btn-json"]',
+    ) as HTMLButtonElement;
+    click(btn);
     await flush();
-    expect(downloadText).toHaveBeenCalled();
+    expect(container.querySelector('[data-testid="export-ritual-overlay"]')).toBeTruthy();
+    await vi.advanceTimersByTimeAsync(2200);
+    await flush();
+    expect(prepareJsonExport).toHaveBeenCalled();
+    expect(triggerBlobDownload).toHaveBeenCalled();
+    vi.useRealTimers();
     unmount();
   });
 
-  it("ZIP export calls exportBlueprintZip", async () => {
+  it("ZIP export starts ritual and prepares zip", async () => {
+    vi.useFakeTimers();
     const { container, unmount } = render(
       <BlueprintView blueprint={richBlueprint()} />,
     );
-    const btn = [...container.querySelectorAll("button")].find((b) =>
-      /ZIP|Archív|archív/i.test(b.textContent || ""),
-    );
-    click(btn!);
+    const btn = container.querySelector(
+      '[data-testid="export-btn-zip"]',
+    ) as HTMLButtonElement;
+    click(btn);
     await flush();
+    expect(container.querySelector('[data-testid="export-ritual-overlay"]')).toBeTruthy();
+    await vi.advanceTimersByTimeAsync(2200);
     await flush();
-    expect(exportBlueprintZip).toHaveBeenCalled();
+    expect(prepareZipExport).toHaveBeenCalled();
+    expect(triggerBlobDownload).toHaveBeenCalled();
+    vi.useRealTimers();
     unmount();
   });
 

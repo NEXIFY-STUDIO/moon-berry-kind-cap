@@ -14,7 +14,7 @@ page.on("console", (m) => {
 
 await page.goto("http://127.0.0.1:8080/", { waitUntil: "networkidle", timeout: 60000 });
 await page.getByPlaceholder("https://moja-appka.com").fill("https://example.com");
-await page.getByRole("button", { name: /Vytvoriť blueprint/i }).click();
+await page.getByRole("button", { name: /Create blueprint|Vytvoriť blueprint/i }).click();
 // Wait for result
 await page.waitForSelector("text=BLUEPRINT_", { timeout: 60000 });
 await page.waitForTimeout(1500);

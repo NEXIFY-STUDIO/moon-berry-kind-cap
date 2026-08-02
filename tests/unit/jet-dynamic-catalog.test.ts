@@ -42,7 +42,7 @@ describe("JetEngine dynamic field catalog + architecture", () => {
     expect(arch.listingGrids.length).toBeGreaterThan(0);
     expect(arch.dynamicFields.length).toBeGreaterThan(0);
     expect(arch.dynamicFieldCatalog.length).toBeGreaterThan(0);
-    expect(arch.notes.some((n) => /Live REST vypnutý|DOM/i.test(n))).toBe(true);
+    expect(arch.notes.some((n) => /Live REST disabled|Live REST vypnutý|DOM/i.test(n))).toBe(true);
     expect(arch.rest.root).toBeNull();
     expect(arch.limitations.some((l) => /dynamic fields/i.test(l))).toBe(true);
   });
@@ -57,7 +57,7 @@ describe("JetEngine dynamic field catalog + architecture", () => {
     expect(arch.detected).toBe(false);
     expect(arch.listingGrids).toEqual([]);
     expect(arch.dynamicFields).toEqual([]);
-    expect(arch.notes[0]).toMatch(/Neplatná|URL/i);
+    expect(arch.notes[0]).toMatch(/Invalid|Neplatná|URL/i);
   });
 
   it("catalog prefers metaKey when present", () => {

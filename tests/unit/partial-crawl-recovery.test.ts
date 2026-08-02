@@ -269,14 +269,24 @@ describe("partial crawl helpers", () => {
     ).toBe("complete");
   });
 
-  it("partialScanBadgeLabel SK copy", () => {
+  it("partialScanBadgeLabel EN copy (default)", () => {
     const label = partialScanBadgeLabel("partial", {
       totalAttempted: 15,
       succeeded: 14,
       failed: 1,
     });
+    expect(label).toMatch(/Partial scan/);
+  });
+
+  it("partialScanBadgeLabel SK copy", () => {
+    const label = partialScanBadgeLabel(
+      "partial",
+      { totalAttempted: 5, succeeded: 4, failed: 1 },
+      true,
+      "sk",
+    );
     expect(label).toMatch(/Čiastočný sken/);
-    expect(label).toMatch(/15/);
+    expect(label).toMatch(/5\/6/);
     expect(label).toMatch(/1 zlyhala/);
   });
 });

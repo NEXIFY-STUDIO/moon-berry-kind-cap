@@ -1,0 +1,323 @@
+{
+  "components": [
+    {
+      "id": "comp-listing-grid",
+      "instances": 1,
+      "kind": "grid",
+      "name": "Listing grid",
+      "varyingProps": [
+        "title",
+        "image",
+        "meta",
+        "permalink"
+      ]
+    }
+  ],
+  "content": {
+    "images": [
+      {
+        "slot": "image.01",
+        "url": "https://wp.example/wp-content/uploads/2024/01/alpha.jpg"
+      },
+      {
+        "slot": "image.02",
+        "url": "https://wp.example/wp-content/uploads/2024/01/cover.jpg"
+      }
+    ],
+    "texts": [
+      {
+        "slot": "heading.h1.01",
+        "text": "Hero — Aplikácie CCT"
+      },
+      {
+        "slot": "heading.h3.02",
+        "text": "App Alpha"
+      },
+      {
+        "slot": "heading.h3.03",
+        "text": "App Beta"
+      },
+      {
+        "slot": "meta.description",
+        "text": "Ukážka JetEngine listing + Elementor"
+      },
+      {
+        "slot": "meta.title",
+        "text": "Gruppa Demo WP JetEngine"
+      },
+      {
+        "slot": "nav.link.01",
+        "text": "Domov"
+      },
+      {
+        "slot": "nav.link.02",
+        "text": "Aplikácie"
+      },
+      {
+        "slot": "nav.link.03",
+        "text": "Kontakt"
+      },
+      {
+        "slot": "nav.link.04",
+        "text": "Detail"
+      },
+      {
+        "slot": "nav.link.05",
+        "text": "Detail"
+      },
+      {
+        "slot": "nav.link.06",
+        "text": "Privacy"
+      },
+      {
+        "slot": "nav.link.07",
+        "text": "Terms"
+      }
+    ]
+  },
+  "designTokens": {
+    "colors": [
+      {
+        "role": "bg",
+        "sources": [
+          "css:--e-global-color-secondary",
+          "design.colors",
+          "elementor:--e-global-color-secondary"
+        ],
+        "value": "#c8a16e"
+      },
+      {
+        "role": "accent",
+        "sources": [
+          "css:--e-global-color-primary",
+          "design.colors",
+          "elementor:--e-global-color-primary"
+        ],
+        "value": "#0f0e0c"
+      }
+    ],
+    "radii": [],
+    "shadows": [],
+    "spacing": [],
+    "typography": {
+      "fontFamilies": [
+        "Geist"
+      ],
+      "scale": [
+        {
+          "fontFamily": "Geist",
+          "fontSize": "15px",
+          "fontWeight": "700",
+          "letterSpacing": null,
+          "lineHeight": null,
+          "step": "body"
+        },
+        {
+          "fontFamily": "Geist",
+          "fontSize": "40px",
+          "fontWeight": "700",
+          "letterSpacing": null,
+          "lineHeight": null,
+          "step": "button"
+        },
+        {
+          "fontFamily": "Geist",
+          "fontSize": "40px",
+          "fontWeight": "700",
+          "letterSpacing": null,
+          "lineHeight": null,
+          "step": "h1"
+        },
+        {
+          "fontFamily": null,
+          "fontSize": null,
+          "fontWeight": null,
+          "letterSpacing": null,
+          "lineHeight": null,
+          "step": "h2"
+        },
+        {
+          "fontFamily": null,
+          "fontSize": "15px",
+          "fontWeight": null,
+          "letterSpacing": null,
+          "lineHeight": null,
+          "step": "h3"
+        },
+        {
+          "fontFamily": null,
+          "fontSize": "15px",
+          "fontWeight": null,
+          "letterSpacing": null,
+          "lineHeight": null,
+          "step": "h4"
+        }
+      ]
+    }
+  },
+  "gaps": [
+    {
+      "category": "api",
+      "code": "NO_API",
+      "id": "gap-api",
+      "message": "No API contracts or endpoints were reverse-engineered — do not invent fetch URLs or schemas."
+    },
+    {
+      "category": "auth",
+      "code": "NO_AUTH",
+      "id": "gap-auth",
+      "message": "Auth flows are not verified — do not invent login providers, tokens, or session rules."
+    },
+    {
+      "category": "data",
+      "code": "NO_FORMS",
+      "id": "gap-forms",
+      "message": "No forms detected — interactive form fields unknown."
+    },
+    {
+      "category": "hover",
+      "code": "NO_HOVER_STATES",
+      "id": "gap-hover",
+      "message": "Hover / focus / active styles are not captured — do not invent fancy micro-interactions."
+    },
+    {
+      "category": "js_behavior",
+      "code": "NO_JS_BEHAVIOR",
+      "id": "gap-js",
+      "message": "Client-side JS behavior (modals, carousels, filters) is unknown — keep static structure only."
+    },
+    {
+      "category": "routing",
+      "code": "NO_ROUTING",
+      "id": "gap-routing",
+      "message": "App Router / client routes beyond crawled URLs are unknown — only use listed paths."
+    }
+  ],
+  "id": "rebuild_wp-elementor",
+  "layout": {
+    "sections": [
+      {
+        "breakpointHints": [],
+        "headings": [
+          "Hero — Aplikácie CCT"
+        ],
+        "id": "sec-01",
+        "label": "site-header",
+        "order": 0,
+        "role": "nav"
+      },
+      {
+        "breakpointHints": [],
+        "headings": [
+          "Hero — Aplikácie CCT"
+        ],
+        "id": "sec-02",
+        "label": "main-navigation",
+        "order": 1,
+        "role": "nav"
+      },
+      {
+        "breakpointHints": [],
+        "headings": [
+          "Hero — Aplikácie CCT"
+        ],
+        "id": "sec-03",
+        "label": "elementor-section",
+        "order": 2,
+        "role": "content"
+      },
+      {
+        "breakpointHints": [],
+        "headings": [
+          "Hero — Aplikácie CCT"
+        ],
+        "id": "sec-04",
+        "label": "elementor-section",
+        "order": 3,
+        "role": "content"
+      },
+      {
+        "breakpointHints": [],
+        "headings": [
+          "Hero — Aplikácie CCT"
+        ],
+        "id": "sec-05",
+        "label": "elementor-widget",
+        "order": 4,
+        "role": "grid"
+      },
+      {
+        "breakpointHints": [],
+        "headings": [
+          "Hero — Aplikácie CCT"
+        ],
+        "id": "sec-06",
+        "label": "jet-listing-grid__items",
+        "order": 5,
+        "role": "grid"
+      },
+      {
+        "breakpointHints": [],
+        "headings": [
+          "Hero — Aplikácie CCT"
+        ],
+        "id": "sec-07",
+        "label": "App Alpha Popis alpha Detail SaaS, AI",
+        "order": 6,
+        "role": "grid"
+      },
+      {
+        "breakpointHints": [],
+        "headings": [
+          "Hero — Aplikácie CCT"
+        ],
+        "id": "sec-08",
+        "label": "App Beta Detail",
+        "order": 7,
+        "role": "grid"
+      },
+      {
+        "breakpointHints": [],
+        "headings": [
+          "Hero — Aplikácie CCT"
+        ],
+        "id": "sec-09",
+        "label": "site-footer",
+        "order": 8,
+        "role": "footer"
+      }
+    ]
+  },
+  "schemaVersion": "1.0.0",
+  "source": {
+    "blueprintId": "wp-elementor",
+    "description": "Ukážka JetEngine listing + Elementor",
+    "finalUrl": "https://wp.example/",
+    "isThinHtml": false,
+    "language": "sk",
+    "sourceUrl": "https://wp.example/",
+    "tech": [
+      {
+        "confidence": "high",
+        "name": "Elementor"
+      },
+      {
+        "confidence": "high",
+        "name": "Google Analytics"
+      },
+      {
+        "confidence": "high",
+        "name": "JetEngine"
+      },
+      {
+        "confidence": "medium",
+        "name": "Tailwind CSS"
+      },
+      {
+        "confidence": "high",
+        "name": "WordPress"
+      }
+    ],
+    "title": "Gruppa Demo WP JetEngine"
+  }
+}

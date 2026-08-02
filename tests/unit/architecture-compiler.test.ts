@@ -12,7 +12,7 @@ describe("SPA-Aware UI Architecture Compiler", () => {
     expect(ARCHITECTURE_SYSTEM_PROMPT).toMatch(/COMPONENT TREE/);
     expect(ARCHITECTURE_SYSTEM_PROMPT).toMatch(/INTERACTION MODEL/);
     expect(ARCHITECTURE_SYSTEM_PROMPT).toMatch(/UIARCH_/);
-    expect(ARCHITECTURE_SYSTEM_PROMPT).toMatch(/FAIL ak/);
+    expect(ARCHITECTURE_SYSTEM_PROMPT).toMatch(/FAIL if|FAIL ak/);
     expect(ARCHITECTURE_SYSTEM_PROMPT).toMatch(/COMPONENT TREE/);
   });
 

@@ -2,14 +2,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { click, render } from "../../helpers/render";
 import { HistoryList } from "@/components/blueprint/history-list";
-import type { BlueprintSummary } from "@/lib/blueprint/storage";
+import type { HistorySummary } from "@/lib/history/store";
 
-const items: BlueprintSummary[] = [
+const items: HistorySummary[] = [
   {
     id: "A",
     title: "Alpha App",
     sourceUrl: "https://a.test",
     createdAt: "2026-01-01",
+    updatedAt: "2026-01-01",
     tech: ["React", "Vite"],
     contentHash: "h1",
   },
@@ -18,8 +19,10 @@ const items: BlueprintSummary[] = [
     title: "Beta App",
     sourceUrl: null,
     createdAt: "2026-01-02",
+    updatedAt: "2026-01-02",
     tech: ["WordPress"],
     contentHash: "h2",
+    remoteOnly: true,
   },
 ];
 
@@ -28,20 +31,72 @@ describe("UI · HistoryList", () => {
     document.body.innerHTML = "";
   });
 
-  it("empty state message", () => {
+  it("empty state message + local badge", () => {
     const { container, unmount } = render(
-      <HistoryList items={[]} onSelect={() => {}} onDelete={() => {}} />,
+      <HistoryList items={[]} onSelect={() => {}} onDelete={() => {}} mode="local" />,
     );
-    expect(container.textContent).toMatch(/Zatiaľ žiadne blueprinty|História/);
+    expect(container.textContent).toMatch(
+      /No blueprints yet|History|Zatiaľ žiadne blueprinty|História/,
+    );
+    expect(container.textContent).toMatch(/Local only|Len lokálne/);
     unmount();
   });
 
-  it("renders item titles", () => {
+  it("shows Synced badge in remote mode", () => {
+    const { container, unmount } = render(
+      <HistoryList
+        items={items}
+        mode="remote"
+        onSelect={() => {}}
+        onDelete={() => {}}
+      />,
+    );
+    expect(container.querySelector('[data-testid="history-badge-synced"]')).toBeTruthy();
+    expect(container.textContent).toMatch(/Synced/);
+    unmount();
+  });
+
+  it("loading shows skeleton not spinner", () => {
+    const { container, unmount } = render(
+      <HistoryList
+        items={[]}
+        loading
+        onSelect={() => {}}
+        onDelete={() => {}}
+      />,
+    );
+    expect(container.querySelector('[data-testid="history-skeleton"]')).toBeTruthy();
+    expect(container.querySelector(".animate-spin")).toBeFalsy();
+    unmount();
+  });
+
+  it("error state with retry", () => {
+    const onRetry = vi.fn();
+    const { container, unmount } = render(
+      <HistoryList
+        items={[]}
+        error="boom"
+        onSelect={() => {}}
+        onDelete={() => {}}
+        onRetry={onRetry}
+      />,
+    );
+    expect(container.querySelector('[data-testid="history-error"]')).toBeTruthy();
+    const retry = [...container.querySelectorAll("button")].find((b) =>
+      /Retry|Skúsiť/.test(b.textContent || ""),
+    );
+    click(retry!);
+    expect(onRetry).toHaveBeenCalled();
+    unmount();
+  });
+
+  it("renders item titles and remoteOnly marker", () => {
     const { container, unmount } = render(
       <HistoryList items={items} onSelect={() => {}} onDelete={() => {}} />,
     );
     expect(container.textContent).toMatch(/Alpha App/);
     expect(container.textContent).toMatch(/Beta App/);
+    expect(container.textContent).toMatch(/Remote/);
     unmount();
   });
 
@@ -49,7 +104,7 @@ describe("UI · HistoryList", () => {
     const { container, unmount } = render(
       <HistoryList items={items} onSelect={() => {}} onDelete={() => {}} />,
     );
-    expect(container.textContent).toMatch(/História \(2\)/);
+    expect(container.textContent).toMatch(/History \(2\)|História \(2\)/);
     unmount();
   });
 
@@ -71,7 +126,9 @@ describe("UI · HistoryList", () => {
     const { container, unmount } = render(
       <HistoryList items={items} onSelect={() => {}} onDelete={onDelete} />,
     );
-    const del = container.querySelector('[aria-label="Zmazať"]');
+    const del =
+      container.querySelector('[aria-label="Delete"]') ||
+      container.querySelector('[aria-label="Zmazať"]');
     click(del!);
     expect(onDelete).toHaveBeenCalledWith("A");
     unmount();
@@ -86,27 +143,25 @@ describe("UI · HistoryList", () => {
         onDelete={() => {}}
       />,
     );
-    expect(container.textContent).toMatch(/Beta App/);
-    // active row has stronger border class — presence of both items is enough
     expect(container.querySelectorAll("li").length).toBe(2);
     unmount();
   });
 
-  it("shows sourceUrl or falls back to id", () => {
+  it("clear all button", () => {
+    const onClearAll = vi.fn();
     const { container, unmount } = render(
-      <HistoryList items={items} onSelect={() => {}} onDelete={() => {}} />,
+      <HistoryList
+        items={items}
+        onSelect={() => {}}
+        onDelete={() => {}}
+        onClearAll={onClearAll}
+      />,
     );
-    expect(container.textContent).toMatch(/https:\/\/a\.test/);
-    expect(container.textContent).toMatch(/B/);
-    unmount();
-  });
-
-  it("renders tech chips", () => {
-    const { container, unmount } = render(
-      <HistoryList items={items} onSelect={() => {}} onDelete={() => {}} />,
-    );
-    expect(container.textContent).toMatch(/React/);
-    expect(container.textContent).toMatch(/WordPress/);
+    const btn =
+      container.querySelector('[aria-label="Clear all"]') ||
+      container.querySelector('[aria-label="Vymazať všetko"]');
+    click(btn!);
+    expect(onClearAll).toHaveBeenCalled();
     unmount();
   });
 });

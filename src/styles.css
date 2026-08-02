@@ -336,6 +336,105 @@
     }
   }
 
+  /* ── Export ritual neon network ── */
+  .export-ritual-stage {
+    background:
+      radial-gradient(
+        ellipse 70% 60% at 50% 50%,
+        color-mix(in oklab, var(--color-accent) 8%, transparent),
+        transparent 70%
+      ),
+      var(--color-bg);
+  }
+
+  .export-ritual-edge {
+    stroke: color-mix(in oklab, var(--color-accent) 25%, transparent);
+    stroke-width: 0.45;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  .export-ritual-edge-on {
+    opacity: 0.85;
+    stroke: color-mix(in oklab, var(--color-accent) 70%, transparent);
+    filter: drop-shadow(0 0 1px color-mix(in oklab, var(--color-accent) 50%, transparent));
+  }
+  .export-ritual-edge-dim {
+    opacity: 0.35;
+  }
+
+  .export-ritual-node {
+    fill: color-mix(in oklab, var(--color-fg) 25%, transparent);
+    opacity: 0;
+    transition: opacity 0.2s ease, r 0.25s ease;
+  }
+  .export-ritual-node-on {
+    opacity: 1;
+    fill: color-mix(in oklab, var(--color-accent) 85%, white 10%);
+  }
+  .export-ritual-node-core {
+    fill: var(--color-accent);
+    filter: drop-shadow(0 0 3px var(--color-accent));
+  }
+  .export-ritual-core-ring {
+    fill: none;
+    stroke: var(--color-accent);
+    stroke-width: 0.5;
+    opacity: 0.7;
+    animation: export-core-pulse 1.2s ease-in-out infinite;
+  }
+
+  .export-ritual-download-core {
+    box-shadow: 0 0 24px color-mix(in oklab, var(--color-accent) 40%, transparent);
+  }
+  .export-ritual-flash {
+    animation: export-flash 0.35s ease-out 1;
+  }
+
+  @keyframes export-core-pulse {
+    0%,
+    100% {
+      opacity: 0.45;
+      r: 7;
+    }
+    50% {
+      opacity: 0.9;
+      r: 8.5;
+    }
+  }
+
+  @keyframes export-flash {
+    0% {
+      transform: scale(0.92);
+      filter: brightness(1.4);
+    }
+    100% {
+      transform: scale(1);
+      filter: brightness(1);
+    }
+  }
+
+  .export-ritual-shake {
+    animation: export-shake 0.45s ease;
+  }
+  @keyframes export-shake {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    20% {
+      transform: translateX(-6px);
+    }
+    40% {
+      transform: translateX(6px);
+    }
+    60% {
+      transform: translateX(-4px);
+    }
+    80% {
+      transform: translateX(4px);
+    }
+  }
+
   @keyframes toggle-hold-spin {
     0% {
       transform: rotate(0deg);
@@ -347,7 +446,10 @@
 
   @media (prefers-reduced-motion: reduce) {
     .shimmer,
-    .toggle-hold-progress {
+    .toggle-hold-progress,
+    .export-ritual-flash,
+    .export-ritual-shake,
+    .export-ritual-core-ring {
       animation: none;
     }
 

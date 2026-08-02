@@ -5,17 +5,22 @@ import { click, flush, render, typeInput } from "../../helpers/render";
 import { makeMinimalBlueprint } from "../../fixtures/minimal-blueprint";
 
 const scanBlueprint = vi.fn();
-const saveBlueprintLocal = vi.fn();
+const historySave = vi.fn(async () => {});
 
 vi.mock("@/lib/blueprint/server", () => ({
   scanBlueprint: (...args: unknown[]) => scanBlueprint(...args),
+}));
+
+vi.mock("@/lib/history/store", () => ({
+  save: (...args: unknown[]) => historySave(...args),
+  ensureBoot: async () => "local",
+  getHistoryMode: () => "local",
 }));
 
 vi.mock("@/lib/blueprint/storage", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/blueprint/storage")>();
   return {
     ...actual,
-    saveBlueprintLocal: (...args: unknown[]) => saveBlueprintLocal(...args),
   };
 });
 
@@ -93,7 +98,7 @@ function shortPress(btn: HTMLButtonElement) {
 describe("UI · ScanForm", () => {
   beforeEach(() => {
     scanBlueprint.mockReset();
-    saveBlueprintLocal.mockReset();
+    historySave.mockReset();
     document.body.innerHTML = "";
   });
   afterEach(() => {
@@ -105,7 +110,7 @@ describe("UI · ScanForm", () => {
     const { container, unmount } = render(
       <ScanForm onScanned={() => {}} />,
     );
-    expect(container.textContent).toMatch(/Skenovať projekt/);
+    expect(container.textContent).toMatch(/Scan project|Skenovať projekt/);
     expect(container.textContent).toMatch(/WordPress\/JetEngine|frontend snapshot|start here/i);
     unmount();
   });
@@ -113,7 +118,7 @@ describe("UI · ScanForm", () => {
   it("submit is disabled when URL empty", () => {
     const { container, unmount } = render(<ScanForm onScanned={() => {}} />);
     const btn = [...container.querySelectorAll("button")].find((b) =>
-      /Vytvoriť blueprint/.test(b.textContent || ""),
+      /Create blueprint|Vytvoriť blueprint/.test(b.textContent || ""),
     ) as HTMLButtonElement;
     expect(btn.disabled).toBe(true);
     unmount();
@@ -122,11 +127,11 @@ describe("UI · ScanForm", () => {
   it("enables submit after typing URL", () => {
     const { container, unmount } = render(<ScanForm onScanned={() => {}} />);
     const input = container.querySelector(
-      'input[placeholder="https://moja-appka.com"]',
+      'input[placeholder="https://my-app.com"]',
     ) as HTMLInputElement;
     typeInput(input, "https://example.com");
     const btn = [...container.querySelectorAll("button")].find((b) =>
-      /Vytvoriť blueprint/.test(b.textContent || ""),
+      /Create blueprint|Vytvoriť blueprint/.test(b.textContent || ""),
     ) as HTMLButtonElement;
     expect(btn.disabled).toBe(false);
     unmount();
@@ -139,7 +144,7 @@ describe("UI · ScanForm", () => {
     );
     click(chip!);
     const input = container.querySelector(
-      'input[placeholder="https://moja-appka.com"]',
+      'input[placeholder="https://my-app.com"]',
     ) as HTMLInputElement;
     expect(input.value).toContain("example.com");
     unmount();
@@ -148,7 +153,7 @@ describe("UI · ScanForm", () => {
   it("switches to HTML mode tab trigger is interactive", () => {
     const { container, unmount } = render(<ScanForm onScanned={() => {}} />);
     const htmlTab = [...container.querySelectorAll("button")].find((el) =>
-      /Vložiť HTML/.test(el.textContent || ""),
+      /Paste HTML|Vložiť HTML/.test(el.textContent || ""),
     ) as HTMLButtonElement;
     expect(htmlTab).toBeTruthy();
     click(htmlTab);
@@ -177,7 +182,7 @@ describe("UI · ScanForm", () => {
     const btn = getToggle(container, "opt-assets");
     shortPress(btn);
     expect(btn.getAttribute("aria-checked")).toBe("true");
-    expect(container.textContent).toMatch(/ZIP exportu|Stiahnuť assety/i);
+    expect(container.textContent).toMatch(/ZIP export|Download assets|ZIP exportu|Stiahnuť assety/i);
     unmount();
   });
 
@@ -194,7 +199,7 @@ describe("UI · ScanForm", () => {
     vi.useFakeTimers();
     const { container, unmount } = render(<ScanForm onScanned={() => {}} />);
     const htmlTab = [...container.querySelectorAll("button")].find((b) =>
-      /Vložiť HTML/.test(b.textContent || ""),
+      /Paste HTML|Vložiť HTML/.test(b.textContent || ""),
     );
     click(htmlTab!);
     const renderBtn = getToggle(container, "opt-render");
@@ -209,12 +214,12 @@ describe("UI · ScanForm", () => {
     const { container, unmount } = render(<ScanForm onScanned={() => {}} />);
     typeInput(
       container.querySelector(
-        'input[placeholder="https://moja-appka.com"]',
+        'input[placeholder="https://my-app.com"]',
       ) as HTMLInputElement,
       "https://example.com",
     );
     const btn = [...container.querySelectorAll("button")].find((b) =>
-      /Vytvoriť blueprint/.test(b.textContent || ""),
+      /Create blueprint|Vytvoriť blueprint/.test(b.textContent || ""),
     );
     click(btn!);
     await flush();
@@ -223,26 +228,26 @@ describe("UI · ScanForm", () => {
     unmount();
   });
 
-  it("calls onScanned and saveBlueprintLocal on success", async () => {
+  it("calls onScanned and historySave on success", async () => {
     const bp = makeMinimalBlueprint({ id: "BLUEPRINT_UI_1" });
     scanBlueprint.mockResolvedValue({ ok: true, blueprint: bp });
     const onScanned = vi.fn();
     const { container, unmount } = render(<ScanForm onScanned={onScanned} />);
     typeInput(
       container.querySelector(
-        'input[placeholder="https://moja-appka.com"]',
+        'input[placeholder="https://my-app.com"]',
       ) as HTMLInputElement,
       "https://example.com",
     );
     click(
       [...container.querySelectorAll("button")].find((b) =>
-        /Vytvoriť blueprint/.test(b.textContent || ""),
+        /Create blueprint|Vytvoriť blueprint/.test(b.textContent || ""),
       )!,
     );
     await flush();
     await flush();
     expect(onScanned).toHaveBeenCalledWith(bp);
-    expect(saveBlueprintLocal).toHaveBeenCalledWith(bp);
+    expect(historySave).toHaveBeenCalledWith(bp);
     unmount();
   });
 
@@ -254,14 +259,14 @@ describe("UI · ScanForm", () => {
     const { container, unmount } = render(<ScanForm onScanned={() => {}} />);
     typeInput(
       container.querySelector(
-        'input[placeholder="https://moja-appka.com"]',
+        'input[placeholder="https://my-app.com"]',
       ) as HTMLInputElement,
       "https://x.test",
     );
     toggleViaKey(getToggle(container, "opt-wp"));
     click(
       [...container.querySelectorAll("button")].find((b) =>
-        /Vytvoriť blueprint/.test(b.textContent || ""),
+        /Create blueprint|Vytvoriť blueprint/.test(b.textContent || ""),
       )!,
     );
     await flush();
@@ -281,7 +286,7 @@ describe("UI · ScanForm", () => {
     });
     const { container, unmount } = render(<ScanForm onScanned={() => {}} />);
     const htmlTab = [...container.querySelectorAll("button")].find((el) =>
-      /Vložiť HTML/.test(el.textContent || ""),
+      /Paste HTML|Vložiť HTML/.test(el.textContent || ""),
     );
     click(htmlTab!);
     await flush();
@@ -289,13 +294,13 @@ describe("UI · ScanForm", () => {
     if (!textarea) {
       typeInput(
         container.querySelector(
-          'input[placeholder="https://moja-appka.com"]',
+          'input[placeholder="https://my-app.com"]',
         ) as HTMLInputElement,
         "https://fallback.test",
       );
       click(
         [...container.querySelectorAll("button")].find((b) =>
-          /Vytvoriť blueprint/.test(b.textContent || ""),
+          /Create blueprint|Vytvoriť blueprint/.test(b.textContent || ""),
         )!,
       );
       await flush();
@@ -306,12 +311,12 @@ describe("UI · ScanForm", () => {
     }
     typeInput(textarea as HTMLTextAreaElement, "<html><body>Hi</body></html>");
     const base = container.querySelector(
-      'input[placeholder="https://povodna-domena.sk"]',
+      'input[placeholder="https://original-domain.com"]',
     ) as HTMLInputElement | null;
     if (base) typeInput(base, "https://orig.test");
     click(
       [...container.querySelectorAll("button")].find((b) =>
-        /Vytvoriť blueprint/.test(b.textContent || ""),
+        /Create blueprint|Vytvoriť blueprint/.test(b.textContent || ""),
       )!,
     );
     await flush();
@@ -323,12 +328,12 @@ describe("UI · ScanForm", () => {
     unmount();
   });
 
-  it("shows Zrušiť cancel button when busy", () => {
+  it("shows Cancel cancel button when busy", () => {
     const { container, unmount } = render(
       <ScanForm onScanned={() => {}} busy setBusy={() => {}} />,
     );
     const cancel = [...container.querySelectorAll("button")].find((b) =>
-      /Zrušiť/.test(b.textContent || ""),
+      /Cancel|Zrušiť/.test(b.textContent || ""),
     );
     expect(cancel).toBeTruthy();
     unmount();
@@ -345,25 +350,66 @@ describe("UI · ScanForm", () => {
     const { container, unmount } = render(<ScanForm onScanned={() => {}} />);
     typeInput(
       container.querySelector(
-        'input[placeholder="https://moja-appka.com"]',
+        'input[placeholder="https://my-app.com"]',
       ) as HTMLInputElement,
       "https://slow.test",
     );
     click(
       [...container.querySelectorAll("button")].find((b) =>
-        /Vytvoriť blueprint/.test(b.textContent || ""),
+        /Create blueprint|Vytvoriť blueprint/.test(b.textContent || ""),
       )!,
     );
     await flush();
     const cancel = [...container.querySelectorAll("button")].find((b) =>
-      /Zrušiť/.test(b.textContent || ""),
+      /Cancel|Zrušiť/.test(b.textContent || ""),
     );
     expect(cancel).toBeTruthy();
     click(cancel!);
     await flush();
-    expect(container.textContent).toMatch(/zrušen/i);
+    expect(container.textContent).toMatch(/cancel|zrušen/i);
     resolveScan({ ok: true, blueprint: makeMinimalBlueprint() });
     await flush();
+    unmount();
+  });
+
+  it("deepLink html-paste switches to HTML mode", async () => {
+    const { container, unmount } = render(
+      <ScanForm onScanned={() => {}} deepLink={{ tool: "html-paste" }} />,
+    );
+    await flush();
+    expect(container.querySelector('[data-testid="scan-html-input"]')).toBeTruthy();
+    expect(container.querySelector('[data-testid="deep-link-note"]')).toBeTruthy();
+    unmount();
+  });
+
+  it("deepLink crawl=false turns crawl switch off", async () => {
+    const { container, unmount } = render(
+      <ScanForm
+        onScanned={() => {}}
+        deepLink={{ tool: "url-scan", crawl: false }}
+      />,
+    );
+    await flush();
+    const crawl = container.querySelector(
+      '[data-testid="opt-crawl"]',
+    ) as HTMLButtonElement;
+    expect(crawl.getAttribute("aria-checked")).toBe("false");
+    unmount();
+  });
+
+  it("deepLink wp=true emphasizes WP toggle", async () => {
+    const { container, unmount } = render(
+      <ScanForm
+        onScanned={() => {}}
+        deepLink={{ tool: "url-scan", wp: true }}
+      />,
+    );
+    await flush();
+    const wp = container.querySelector(
+      '[data-testid="opt-wp"]',
+    ) as HTMLButtonElement;
+    expect(wp.getAttribute("aria-checked")).toBe("true");
+    expect(container.textContent).toMatch(/WP|JetEngine/i);
     unmount();
   });
 });

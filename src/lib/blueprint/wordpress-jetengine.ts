@@ -35,14 +35,14 @@ function assertPublicUrl(raw: string): URL {
   try {
     url = new URL(raw);
   } catch {
-    throw new Error("Neplatná URL pre WP extract.");
+    throw new Error("Invalid URL for WP extract.");
   }
   if (url.protocol !== "http:" && url.protocol !== "https:") {
-    throw new Error("Povolené sú len http a https URL.");
+    throw new Error("Only http and https URLs are allowed.");
   }
   const host = url.hostname.toLowerCase();
   if (BLOCKED_HOSTS.has(host) || isPrivateIp(host)) {
-    throw new Error("Lokálne a privátne adresy nie je možné skenovať.");
+    throw new Error("Local and private addresses cannot be scanned.");
   }
   return url;
 }
@@ -884,7 +884,7 @@ function truncateDeep(value: unknown, depth: number, maxKeys: number): JsonValue
 
 function summarizeRoot(json: unknown): { summary: string; namespaces: string[] } {
   if (!json || typeof json !== "object") {
-    return { summary: "neplatný JSON root", namespaces: [] };
+    return { summary: "invalid JSON root", namespaces: [] };
   }
   const o = json as Record<string, unknown>;
   const ns = Array.isArray(o.namespaces)
@@ -1225,17 +1225,17 @@ export async function extractWordPressArchitecture(opts: {
 }): Promise<WordPressArchitecture> {
   const notes: string[] = [];
   const limitations = [
-    "WP/JetEngine extract je len z verejných REST endpointov a DOM — nie wp-admin, privátne CCT ani DB.",
-    "CCT schémy sú odvodené z verejných záznamov / indexu; skryté polia nemusia byť vo výstupe.",
-    "Elementor template JSON (postmeta) bez REST/exportu nie je dostupný 1:1.",
-    "JetEngine dynamic fields sú rekonštruované z renderovaného DOM + data-settings — nie zo skrytých query builder definícií.",
+    "WP/JetEngine extract is only from public REST endpoints and the DOM — not wp-admin, private CCT, or DB.",
+    "CCT schemas are derived from public records / index; hidden fields may be missing from output.",
+    "Elementor template JSON (postmeta) without REST/export is not available 1:1.",
+    "JetEngine dynamic fields are reconstructed from rendered DOM + data-settings — not from hidden query builder definitions.",
   ];
 
   let origin: string;
   try {
     origin = new URL(opts.baseUrl).origin;
   } catch {
-    return emptyArchitecture("Neplatná base URL pre WP extract.");
+    return emptyArchitecture("Invalid base URL for WP extract.");
   }
 
   const flags = detectWpFromHtml(opts.html, opts.headers || {});
@@ -1292,7 +1292,7 @@ export async function extractWordPressArchitecture(opts: {
     }
   } catch (e) {
     notes.push(
-      `WP REST root nedostupný: ${e instanceof Error ? e.message : "error"}`,
+      `WP REST root unavailable: ${e instanceof Error ? e.message : "error"}`,
     );
   }
 
@@ -1311,7 +1311,7 @@ export async function extractWordPressArchitecture(opts: {
         res.json,
         res.text,
         Array.isArray(res.json)
-          ? `${count} záznamov`
+          ? `${count} records`
           : res.json
             ? "JSON objekt"
             : "bez JSON",
@@ -1339,13 +1339,13 @@ export async function extractWordPressArchitecture(opts: {
         res.status,
         res.json,
         res.text,
-        res.json ? "Jet endpoint odpoveď" : "bez JSON",
+        res.json ? "Jet endpoint response" : "no JSON",
       );
       if (path === "/wp-json/jet-cct/") {
         rest.jetCctIndex = result;
         if (result.ok) {
           flags.isJetEngine = true;
-          notes.push("JetEngine CCT index nájdený.");
+          notes.push("JetEngine CCT index found.");
           const routes =
             res.json &&
             typeof res.json === "object" &&
@@ -1422,7 +1422,7 @@ export async function extractWordPressArchitecture(opts: {
     flags.isJetEngine = true;
   }
   } else {
-    notes.push("Live REST vypnutý — len DOM extract (listings, Elementor, nav/footer).");
+    notes.push("Live REST disabled — DOM extract only (listings, Elementor, nav/footer).");
   }
 
   let sitemapUrls: string[] = [];
@@ -1433,7 +1433,7 @@ export async function extractWordPressArchitecture(opts: {
         notes.push(`Sitemap: ${sitemapUrls.length} URL.`);
       }
     } catch {
-      notes.push("Sitemap nedostupná alebo prázdna.");
+      notes.push("Sitemap unavailable or empty.");
     }
   }
 
@@ -1503,7 +1503,7 @@ function emptyArchitecture(note: string): WordPressArchitecture {
     footerLinks: [],
     notes: [note],
     limitations: [
-      "WP/JetEngine extract je len z verejných REST endpointov a DOM — nie wp-admin, privátne CCT ani DB.",
+      "WP/JetEngine extract is only from public REST endpoints and the DOM — not wp-admin, private CCT, or DB.",
     ],
   };
 }

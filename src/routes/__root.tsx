@@ -6,6 +6,7 @@ import {
   SITE_TITLE,
   buildHeadJsonLdScripts,
 } from "@/lib/seo/json-ld";
+import { LocaleProvider } from "@/lib/i18n/context";
 
 /** Absolute-path social image (resolves against deploy origin). */
 const OG_IMAGE = "/android-chrome-512x512.png";
@@ -33,8 +34,8 @@ export const Route = createRootRoute({
       // Open Graph
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "Blueprint" },
-      { property: "og:locale", content: "sk_SK" },
-      { property: "og:locale:alternate", content: "en_US" },
+      { property: "og:locale", content: "en_US" },
+      { property: "og:locale:alternate", content: "sk_SK" },
       { property: "og:title", content: SITE_TITLE },
       { property: "og:description", content: SITE_DESCRIPTION },
       { property: "og:image", content: OG_IMAGE },
@@ -85,19 +86,21 @@ export const Route = createRootRoute({
 
 function RootDocument() {
   return (
-    <html lang="sk" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
       <body className="min-h-dvh bg-bg text-fg antialiased">
-        <Outlet />
-        <Toaster
-          theme="dark"
-          position="bottom-right"
-          toastOptions={{
-            className: "border border-border bg-bg-elevated text-fg",
-          }}
-        />
+        <LocaleProvider>
+          <Outlet />
+          <Toaster
+            theme="dark"
+            position="bottom-right"
+            toastOptions={{
+              className: "border border-border bg-bg-elevated text-fg",
+            }}
+          />
+        </LocaleProvider>
         <Scripts />
       </body>
     </html>

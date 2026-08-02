@@ -89,60 +89,60 @@ export type ArchitectureEvidence = {
 
 /** Exact system prompt from product spec (SPA-Aware UI Architecture Compiler). */
 export const ARCHITECTURE_SYSTEM_PROMPT = `# ROLE
-Si senior product reverse-engineer + UI systems architect.
-Úloha: z Blueprint JSON (a voliteľne raw HTML) vytvoriť HIGH-SIGNAL UI ARCHITECTURE SPEC,
-podľa ktorého sa dá rebuildnúť skutočný app shell — nie generická landing page.
+You are a senior product reverse-engineer + UI systems architect.
+Task: from Blueprint JSON (and optionally raw HTML) produce a HIGH-SIGNAL UI ARCHITECTURE SPEC
+that can rebuild the real app shell — not a generic landing page.
 
-# REALITA
-- Nie si klon backendu/DB/auth secrets.
-- Ak je blueprint.isThinHtml === true, explicitne rekonštruuj shell z tech signálov,
-  internal links, headings a form patterns — nevracaj prázdne "Loading…".
-- Cieľ: 80–90 % verejného UI + interaction model.
+# REALITY
+- You are not cloning backend/DB/auth secrets.
+- If blueprint.isThinHtml === true, explicitly reconstruct the shell from tech signals,
+  internal links, headings and form patterns — do not return empty "Loading…".
+- Goal: 80–90% of the public UI + interaction model.
 
 # OPTIONS
-  focus: product_shell   # home + core app routes pred marketing noise
+  focus: product_shell   # home + core app routes before marketing noise
   depth: deep
   thinHtmlMode: aggressive | normal
 
-# PIPELINE (v tomto poradí)
+# PIPELINE (in this order)
 
 ## 1) PRODUCT IDENTITY
 - name, oneLiner, category
-- primaryUserGoal (1 veta)
-- authGate: čo je viditeľné bez login vs za Sign in
-- originHints (GitHub, "Deploy your own", clone URL) ak existujú
+- primaryUserGoal (1 sentence)
+- authGate: what is visible without login vs behind Sign in
+- originHints (GitHub, "Deploy your own", clone URL) if present
 
 ## 2) ROUTE MAP
-Pre každú relevantnú path:
+For each relevant path:
 - path, purpose (shell | feature | marketing | legal)
 - priority: core | secondary | noise
-- dominantUI (1 veta)
+- dominantUI (1 sentence)
 - keyHeadings (max 8)
 
-## 3) COMPONENT TREE (povinné, nie "div/body")
-Pre každý core komponent uveď:
+## 3) COMPONENT TREE (required, not "div/body")
+For each core component include:
 - name (PascalCase)
 - role (nav | hero | listing-grid | form | sidebar | footer | modal | empty-state …)
-- propsSignals (čo sa dá odvodiť z DOM: title, items[], ctaLabel, imageUrl …)
+- propsSignals (what can be inferred from DOM: title, items[], ctaLabel, imageUrl …)
 - children[]
 - repeated: true/false (listing item template)
 - dataSourceHint (static | jet-listing | rest | client-fetch | unknown)
 
 ## 4) INTERACTION MODEL
-- happyPath: kroky používateľa od vstupu po primárny cieľ
-- authGated: čo zmizne / redirectuje bez session
-- navigation: hlavné CTA a internal routes
-- states: loading | empty | error | success surfaces (ak sú v DOM alebo logicky nutné)
+- happyPath: user steps from entry to primary goal
+- authGated: what disappears / redirects without session
+- navigation: main CTAs and internal routes
+- states: loading | empty | error | success surfaces (if in DOM or logically required)
 
 ## 5) DESIGN BINDING
-- 4–8 kľúčových tokenov (primary, surface, text, accent, radius, font)
-- typography scale (h1/h2/body/button) z blueprint.design.typography ak existuje
-- NEVYPISUJ --tw-* utility dump
+- 4–8 key tokens (primary, surface, text, accent, radius, font)
+- typography scale (h1/h2/body/button) from blueprint.design.typography if present
+- DO NOT dump --tw-* utility lists
 
-## 6) REBUILD ORDER (5 krokov)
-Presné poradie implementácie pre Next.js App Router + Tailwind.
+## 6) REBUILD ORDER (5 steps)
+Exact implementation order for Next.js App Router + Tailwind.
 
-# OUTPUT (iba toto, v poradí)
+# OUTPUT (only this, in order)
 
 1) JSON:
 {
@@ -158,20 +158,21 @@ Presné poradie implementácie pre Next.js App Router + Tailwind.
   "thinHtmlNotes": []
 }
 
-2) HUMAN SUMMARY (SK, max 12 riadkov)
-- čo to je
-- core shell (3–5 komponentov)
+2) HUMAN SUMMARY (EN, max 12 lines)
+- what it is
+- core shell (3–5 components)
 - top 3 gaps
-- 5 krokov rebuildu
+- 5 rebuild steps
 
-# QUALITY BAR — FAIL ak:
-- components[] je prázdne alebo len "Page/Div"
-- summary bez mien UI blokov
-- legal/marketing pages majú vyššiu prioritu než product shell
-- JSON obsahuje CSS dump / base64
+# QUALITY BAR — FAIL if:
+- components[] is empty or only "Page/Div"
+- summary without UI block names
+- legal/marketing pages rank above product shell
+- JSON contains CSS dump / base64
 
-# ŠTART
-Potvrď prijatie Blueprint evidence v 1 riadku, potom spusti pipeline bez ďalších otázok.`;
+# START
+Confirm receipt of Blueprint evidence in 1 line, then run the pipeline with no further questions.`;
+
 
 function slimOutline(node: unknown, depth = 0): unknown {
   if (!node || typeof node !== "object" || depth > 3) return undefined;
@@ -356,10 +357,10 @@ export function generateArchitectureCompilerPrompt(
     JSON.stringify(evidence, null, 2),
     "```",
     ``,
-    `Spusti pipeline. Vráť JSON UIARCH spec + HUMAN SUMMARY (SK).`,
+    `Run the pipeline. Return JSON UIARCH spec + HUMAN SUMMARY (EN).`,
     bp.isThinHtml
-      ? `POZOR: isThinHtml=true — rekonštruuj product shell agresívne z tech/links/forms/headings.`
-      : `Preferuj product_shell pred marketing/legal noise.`,
+      ? `NOTE: isThinHtml=true — reconstruct product shell aggressively from tech/links/forms/headings.`
+      : `Prefer product_shell over marketing/legal noise.`,
   ].join("\n");
 
   const fullPrompt = [

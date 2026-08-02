@@ -154,6 +154,8 @@ export interface Blueprint {
   id: string;
   version: "1.0.0" | "1.1.0" | "1.2.0";
   createdAt: string;
+  /** Last local/remote mutation time — used for history merge */
+  updatedAt?: string;
   source: ScanSource;
   sourceUrl: string | null;
   finalUrl: string | null;

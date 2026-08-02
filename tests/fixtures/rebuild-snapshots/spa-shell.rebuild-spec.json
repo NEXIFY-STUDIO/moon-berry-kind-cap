@@ -1,0 +1,161 @@
+{
+  "components": [],
+  "content": {
+    "images": [],
+    "texts": [
+      {
+        "slot": "meta.description",
+        "text": "Empty root for client render"
+      },
+      {
+        "slot": "meta.title",
+        "text": "SPA Shell App"
+      }
+    ]
+  },
+  "designTokens": {
+    "colors": [
+      {
+        "role": "accent",
+        "sources": [
+          "design.colors",
+          "meta.themeColor"
+        ],
+        "value": "#0f172a"
+      }
+    ],
+    "radii": [],
+    "shadows": [],
+    "spacing": [],
+    "typography": {
+      "fontFamilies": [],
+      "scale": [
+        {
+          "fontFamily": null,
+          "fontSize": null,
+          "fontWeight": null,
+          "letterSpacing": null,
+          "lineHeight": null,
+          "step": "body"
+        },
+        {
+          "fontFamily": null,
+          "fontSize": null,
+          "fontWeight": null,
+          "letterSpacing": null,
+          "lineHeight": null,
+          "step": "button"
+        },
+        {
+          "fontFamily": null,
+          "fontSize": null,
+          "fontWeight": null,
+          "letterSpacing": null,
+          "lineHeight": null,
+          "step": "h1"
+        },
+        {
+          "fontFamily": null,
+          "fontSize": null,
+          "fontWeight": null,
+          "letterSpacing": null,
+          "lineHeight": null,
+          "step": "h2"
+        },
+        {
+          "fontFamily": null,
+          "fontSize": null,
+          "fontWeight": null,
+          "letterSpacing": null,
+          "lineHeight": null,
+          "step": "h3"
+        },
+        {
+          "fontFamily": null,
+          "fontSize": null,
+          "fontWeight": null,
+          "letterSpacing": null,
+          "lineHeight": null,
+          "step": "h4"
+        }
+      ]
+    }
+  },
+  "gaps": [
+    {
+      "category": "api",
+      "code": "NO_API",
+      "id": "gap-api",
+      "message": "No API contracts or endpoints were reverse-engineered — do not invent fetch URLs or schemas."
+    },
+    {
+      "category": "auth",
+      "code": "NO_AUTH",
+      "id": "gap-auth",
+      "message": "Auth flows are not verified — do not invent login providers, tokens, or session rules."
+    },
+    {
+      "category": "typography",
+      "code": "NO_FONTS",
+      "id": "gap-fonts",
+      "message": "No font-family / @font-face signals — typography stack incomplete."
+    },
+    {
+      "category": "data",
+      "code": "NO_FORMS",
+      "id": "gap-forms",
+      "message": "No forms detected — interactive form fields unknown."
+    },
+    {
+      "category": "hover",
+      "code": "NO_HOVER_STATES",
+      "id": "gap-hover",
+      "message": "Hover / focus / active styles are not captured — do not invent fancy micro-interactions."
+    },
+    {
+      "category": "js_behavior",
+      "code": "NO_JS_BEHAVIOR",
+      "id": "gap-js",
+      "message": "Client-side JS behavior (modals, carousels, filters) is unknown — keep static structure only."
+    },
+    {
+      "category": "layout",
+      "code": "NO_SECTIONS",
+      "id": "gap-layout",
+      "message": "No clear page sections from outline/headings."
+    },
+    {
+      "category": "media",
+      "code": "NO_IMAGES",
+      "id": "gap-media",
+      "message": "No image assets captured — media slots empty."
+    },
+    {
+      "category": "routing",
+      "code": "NO_ROUTING",
+      "id": "gap-routing",
+      "message": "App Router / client routes beyond crawled URLs are unknown — only use listed paths."
+    },
+    {
+      "category": "layout",
+      "code": "THIN_HTML",
+      "id": "gap-thin",
+      "message": "SPA shell / thin HTML detected — DOM content is incomplete without headless render."
+    }
+  ],
+  "id": "rebuild_spa-shell",
+  "layout": {
+    "sections": []
+  },
+  "schemaVersion": "1.0.0",
+  "source": {
+    "blueprintId": "spa-shell",
+    "description": "Empty root for client render",
+    "finalUrl": "https://spa.example/",
+    "isThinHtml": true,
+    "language": "en",
+    "sourceUrl": "https://spa.example/",
+    "tech": [],
+    "title": "SPA Shell App"
+  }
+}

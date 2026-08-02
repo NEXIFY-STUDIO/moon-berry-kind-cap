@@ -93,6 +93,6 @@ describe("scanToBlueprint · HTML mode", () => {
   });
 
   it("rejects empty input", async () => {
-    await expect(scanToBlueprint({})).rejects.toThrow(/Zadaj URL alebo/i);
+    await expect(scanToBlueprint({})).rejects.toThrow(/Enter a URL|Zadaj URL/i);
   });
 });

@@ -35,7 +35,6 @@ import {
   downloadText,
   downloadElementorTemplate,
   exportBlueprintJson,
-  exportBlueprintZip,
 } from "@/lib/blueprint/storage";
 import type { Blueprint, DomOutlineNode } from "@/lib/blueprint/types";
 import { partialScanBadgeLabel } from "@/lib/blueprint/crawl-pages";
@@ -45,6 +44,14 @@ import {
 import {
   generateArchitectureCompilerPrompt,
 } from "@/lib/ai-rebuild/architecture-compiler";
+import {
+  blueprintToRebuildSpec,
+  buildAllRebuildPrompts,
+  generateTailwindFromSpec,
+  scoreRebuildSpec,
+} from "@/lib/rebuild";
+import { CompletenessCard } from "@/components/blueprint/completeness-card";
+import { ExportRitualBar } from "@/components/blueprint/export-ritual";
 import { cn, formatBytes } from "@/lib/utils";
 
 function confVariant(c: "high" | "medium" | "low") {
@@ -82,12 +89,35 @@ function OutlineTree({ node, depth = 0 }: { node: DomOutlineNode; depth?: number
   );
 }
 
-export function BlueprintView({ blueprint }: { blueprint: Blueprint }) {
-  const [tab, setTab] = useState("overview");
+export function BlueprintView({
+  blueprint,
+  initialTab,
+}: {
+  blueprint: Blueprint;
+  initialTab?: string;
+}) {
+  const [tab, setTab] = useState(initialTab || "overview");
   const [copied, setCopied] = useState(false);
-  const [zipping, setZipping] = useState(false);
-  const [copiedAi, setCopiedAi] = useState<"prompt" | "tw" | "arch" | null>(null);
+  const [copiedAi, setCopiedAi] = useState<
+    "prompt" | "tw" | "arch" | "react" | "html" | "next" | null
+  >(null);
 
+  const rebuildSpec = useMemo(
+    () => blueprintToRebuildSpec(blueprint),
+    [blueprint],
+  );
+  const completeness = useMemo(
+    () => scoreRebuildSpec(rebuildSpec),
+    [rebuildSpec],
+  );
+  const stackPrompts = useMemo(
+    () => buildAllRebuildPrompts(rebuildSpec),
+    [rebuildSpec],
+  );
+  const twFromSpec = useMemo(
+    () => generateTailwindFromSpec(rebuildSpec),
+    [rebuildSpec],
+  );
   const aiRebuild = useMemo(() => generateAiRebuildPrompt(blueprint), [blueprint]);
   const archCompiler = useMemo(
     () => generateArchitectureCompilerPrompt(blueprint),
@@ -133,18 +163,6 @@ export function BlueprintView({ blueprint }: { blueprint: Blueprint }) {
       );
     } catch {
       toast.error("Elementor export zlyhal");
-    }
-  }
-
-  async function downloadZip() {
-    setZipping(true);
-    try {
-      await exportBlueprintZip(blueprint);
-      toast.success("ZIP archív pripravený");
-    } catch {
-      toast.error("Export ZIP zlyhal");
-    } finally {
-      setZipping(false);
     }
   }
 
@@ -259,29 +277,12 @@ export function BlueprintView({ blueprint }: { blueprint: Blueprint }) {
               </details>
             ) : null}
           </div>
-          <div className="flex flex-wrap gap-2 shrink-0">
+          <ExportRitualBar blueprint={blueprint}>
             <Button variant="secondary" size="sm" onClick={() => void copyJson()}>
               {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
               JSON
             </Button>
-            <Button variant="secondary" size="sm" onClick={downloadJson}>
-              <FileJson className="size-3.5" />
-              Stiahnuť JSON
-            </Button>
-            <Button variant="secondary" size="sm" onClick={downloadElementor}>
-              <LayoutGrid className="size-3.5" />
-              Elementor JSON
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              disabled={zipping}
-              onClick={() => void downloadZip()}
-            >
-              <FileArchive className="size-3.5" />
-              {zipping ? "ZIP…" : "Export ZIP"}
-            </Button>
-          </div>
+          </ExportRitualBar>
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
@@ -1229,7 +1230,7 @@ export function BlueprintView({ blueprint }: { blueprint: Blueprint }) {
         </TabsContent>
 
 
-        <TabsContent value="ai-rebuild" className="space-y-4">
+                <TabsContent value="ai-rebuild" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1237,106 +1238,164 @@ export function BlueprintView({ blueprint }: { blueprint: Blueprint }) {
                 AI Rebuild Studio
               </CardTitle>
               <CardDescription>
-                Architecture-first rebuild: SPA UI Architecture Compiler + Tailwind tokens.
-                Kopíruj prompt do Claude / ChatGPT / Cursor.
+                RebuildSpec → stack prompts (React/Tailwind, HTML/CSS, Next.js). Copy into Claude / Grok / Cursor.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  variant="default"
-                  size="sm"
-                  onClick={async () => {
-                    await navigator.clipboard.writeText(archCompiler.fullPrompt);
-                    setCopiedAi("arch");
-                    toast.success("Kopírované!", {
-                      description: "Architecture Spec prompt je v schránke",
-                    });
-                    setTimeout(() => setCopiedAi(null), 1600);
-                  }}
-                >
-                  {copiedAi === "arch" ? (
-                    <Check className="size-3.5" />
-                  ) : (
-                    <Sparkles className="size-3.5" />
-                  )}
-                  Architecture Spec prompt
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={async () => {
-                    await navigator.clipboard.writeText(aiRebuild.fullPrompt);
-                    setCopiedAi("prompt");
-                    toast.success("Kopírované!", {
-                      description: "Klasický rebuild prompt je v schránke",
-                    });
-                    setTimeout(() => setCopiedAi(null), 1600);
-                  }}
-                >
-                  {copiedAi === "prompt" ? (
-                    <Check className="size-3.5" />
-                  ) : (
-                    <Wand2 className="size-3.5" />
-                  )}
-                  Klasický rebuild prompt
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={async () => {
-                    await navigator.clipboard.writeText(aiRebuild.tailwindConfigJs);
-                    setCopiedAi("tw");
-                    toast.success("Kopírované!", {
-                      description: "Tailwind config fragment je v schránke",
-                    });
-                    setTimeout(() => setCopiedAi(null), 1600);
-                  }}
-                >
-                  {copiedAi === "tw" ? (
-                    <Check className="size-3.5" />
-                  ) : (
-                    <Copy className="size-3.5" />
-                  )}
-                  Tailwind Config
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    downloadText(
-                      `${blueprint.id}-architecture-compiler.txt`,
-                      archCompiler.fullPrompt,
-                      "text/plain;charset=utf-8",
-                    );
-                    toast.success("Architecture prompt stiahnutý");
-                  }}
-                >
-                  <Download className="size-3.5" />
-                  Stiahnuť Architecture .txt
-                </Button>
+              <CompletenessCard spec={rebuildSpec} report={completeness} />
+
+              <div>
+                <h4 className="text-sm font-medium mb-2">Stack prompts (from RebuildSpec)</h4>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(
+                        stackPrompts["react-tailwind"].fullPrompt,
+                      );
+                      setCopiedAi("react");
+                      toast.success("Copied!", {
+                        description: "React + Tailwind prompt is on the clipboard",
+                      });
+                      setTimeout(() => setCopiedAi(null), 1600);
+                    }}
+                  >
+                    {copiedAi === "react" ? (
+                      <Check className="size-3.5" />
+                    ) : (
+                      <Code2 className="size-3.5" />
+                    )}
+                    React + Tailwind
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(
+                        stackPrompts["html-css"].fullPrompt,
+                      );
+                      setCopiedAi("html");
+                      toast.success("Copied!", {
+                        description: "HTML + CSS prompt is on the clipboard",
+                      });
+                      setTimeout(() => setCopiedAi(null), 1600);
+                    }}
+                  >
+                    {copiedAi === "html" ? (
+                      <Check className="size-3.5" />
+                    ) : (
+                      <FileJson className="size-3.5" />
+                    )}
+                    HTML + CSS
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(
+                        stackPrompts["nextjs-app"].fullPrompt,
+                      );
+                      setCopiedAi("next");
+                      toast.success("Copied!", {
+                        description: "Next.js App Router prompt is on the clipboard",
+                      });
+                      setTimeout(() => setCopiedAi(null), 1600);
+                    }}
+                  >
+                    {copiedAi === "next" ? (
+                      <Check className="size-3.5" />
+                    ) : (
+                      <Layers className="size-3.5" />
+                    )}
+                    Next.js App Router
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(twFromSpec);
+                      setCopiedAi("tw");
+                      toast.success("Copied!", {
+                        description: "Tailwind config fragment is on the clipboard",
+                      });
+                      setTimeout(() => setCopiedAi(null), 1600);
+                    }}
+                  >
+                    {copiedAi === "tw" ? (
+                      <Check className="size-3.5" />
+                    ) : (
+                      <Copy className="size-3.5" />
+                    )}
+                    Tailwind Config
+                  </Button>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-medium mb-2 text-fg-muted">Legacy prompts</h4>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(archCompiler.fullPrompt);
+                      setCopiedAi("arch");
+                      toast.success("Copied!", {
+                        description: "Architecture Spec prompt is on the clipboard",
+                      });
+                      setTimeout(() => setCopiedAi(null), 1600);
+                    }}
+                  >
+                    {copiedAi === "arch" ? (
+                      <Check className="size-3.5" />
+                    ) : (
+                      <Sparkles className="size-3.5" />
+                    )}
+                    Architecture Spec
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(aiRebuild.fullPrompt);
+                      setCopiedAi("prompt");
+                      toast.success("Copied!", {
+                        description: "Classic rebuild prompt is on the clipboard",
+                      });
+                      setTimeout(() => setCopiedAi(null), 1600);
+                    }}
+                  >
+                    {copiedAi === "prompt" ? (
+                      <Check className="size-3.5" />
+                    ) : (
+                      <Wand2 className="size-3.5" />
+                    )}
+                    Classic rebuild
+                  </Button>
+                </div>
               </div>
 
               {blueprint.isThinHtml && (
                 <div className="rounded-[var(--radius-md)] border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning">
-                  Thin HTML / SPA — Architecture Compiler beží v{" "}
-                  <strong className="text-fg">aggressive</strong> režime (rekonštrukcia shellu z
-                  links/tech/forms).
+                  Thin HTML / SPA shell — enable Headless render for better completeness.
                 </div>
               )}
 
               <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-6 text-xs">
                 {[
-                  ["Routes", archCompiler.meta.routeCandidates],
-                  ["Hints", archCompiler.meta.componentHints],
-                  ["Formuláre", archCompiler.meta.formCount],
-                  ["Tech", archCompiler.meta.techCount],
-                  ["Thin HTML", archCompiler.meta.thinHtml ? "áno" : "nie"],
-                  ["Farby", aiRebuild.meta.colorCount],
+                  ["Sections", rebuildSpec.layout.sections.length],
+                  ["Components", rebuildSpec.components.length],
+                  ["Gaps", rebuildSpec.gaps.length],
+                  ["Forms", archCompiler.meta.formCount],
+                  ["Thin HTML", rebuildSpec.source.isThinHtml ? "yes" : "no"],
+                  ["Color roles", rebuildSpec.designTokens.colors.length],
                 ].map(([label, val]) => (
                   <div
                     key={String(label)}
@@ -1350,44 +1409,24 @@ export function BlueprintView({ blueprint }: { blueprint: Blueprint }) {
 
               <div className="space-y-2">
                 <h4 className="text-sm font-medium flex items-center gap-2">
-                  <Sparkles className="size-3.5" />
-                  Architecture Compiler — system prompt
+                  <Code2 className="size-3.5" />
+                  React + Tailwind prompt (preview)
                 </h4>
-                <ScrollArea className="h-[160px] rounded-[var(--radius-md)] border border-border bg-bg-elevated">
-                  <pre className="p-3 text-[11px] leading-relaxed mono text-fg-muted whitespace-pre-wrap break-words">
-                    {archCompiler.systemPrompt}
+                <ScrollArea className="h-[220px] rounded-[var(--radius-md)] border border-border bg-[#0c0c0e]">
+                  <pre className="p-3 text-[11px] leading-relaxed mono text-emerald-200/90 whitespace-pre-wrap break-words">
+                    {stackPrompts["react-tailwind"].userPrompt.slice(0, 4000)}
+                    {stackPrompts["react-tailwind"].userPrompt.length > 4000
+                      ? "\n…"
+                      : ""}
                   </pre>
                 </ScrollArea>
               </div>
 
               <div className="space-y-2">
-                <h4 className="text-sm font-medium">
-                  Architecture Compiler — user (slim evidence JSON)
-                </h4>
-                <ScrollArea className="h-[280px] rounded-[var(--radius-md)] border border-border bg-[#0c0c0e]">
-                  <pre className="p-3 text-[11px] leading-relaxed mono text-violet-200/90 whitespace-pre-wrap break-words">
-                    {archCompiler.userPrompt}
-                  </pre>
-                </ScrollArea>
-              </div>
-
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium flex items-center gap-2">
-                  <Bot className="size-3.5" />
-                  Klasický rebuild — system prompt
-                </h4>
-                <ScrollArea className="h-[100px] rounded-[var(--radius-md)] border border-border bg-bg-elevated">
-                  <pre className="p-3 text-[11px] leading-relaxed mono text-fg-muted whitespace-pre-wrap break-words">
-                    {aiRebuild.systemPrompt}
-                  </pre>
-                </ScrollArea>
-              </div>
-
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium">Tailwind config fragment</h4>
+                <h4 className="text-sm font-medium">Tailwind config fragment (from RebuildSpec)</h4>
                 <ScrollArea className="h-[160px] rounded-[var(--radius-md)] border border-border bg-[#0c0c0e]">
                   <pre className="p-3 text-[11px] leading-relaxed mono text-sky-200/90 whitespace-pre-wrap break-words">
-                    {aiRebuild.tailwindConfigJs}
+                    {twFromSpec}
                   </pre>
                 </ScrollArea>
               </div>
@@ -1395,7 +1434,7 @@ export function BlueprintView({ blueprint }: { blueprint: Blueprint }) {
           </Card>
         </TabsContent>
 
-        <TabsContent value="json">
+<TabsContent value="json">
           <Card>
             <CardHeader className="flex-row items-center justify-between gap-3 space-y-0">
               <div>

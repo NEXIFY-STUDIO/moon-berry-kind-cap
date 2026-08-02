@@ -13,7 +13,7 @@ export type JsonLdGraph = {
 export const SITE_NAME = "Blueprint";
 export const SITE_TITLE = "Blueprint — URL → 1:1 frontend blueprint";
 export const SITE_DESCRIPTION =
-  "Skenuj ľubovoľnú verejnú URL alebo vlož HTML a vytvor štruktúrovaný 1:1 frontend blueprint s exportom JSON/ZIP. WordPress, JetEngine, Elementor reverse-spec.";
+  "Scan any public URL or paste HTML and build a structured 1:1 frontend blueprint with JSON/ZIP export. WordPress, JetEngine, Elementor reverse-spec.";
 
 export type JsonLdSiteOptions = {
   /** Absolute origin e.g. https://blueprint.example.com — optional for local/dev */
@@ -35,7 +35,7 @@ export function buildSiteJsonLd(opts: JsonLdSiteOptions = {}): JsonLdGraph {
   const path = opts.path ?? "/";
   const pageUrl = abs(origin, path);
   const logoUrl = abs(origin, "/android-chrome-512x512.png");
-  const locale = opts.locale ?? "sk-SK";
+  const locale = opts.locale ?? "en-US";
 
   const orgId = origin ? `${origin.replace(/\/$/, "")}/#organization` : "#organization";
   const websiteId = origin ? `${origin.replace(/\/$/, "")}/#website` : "#website";
@@ -142,26 +142,26 @@ export function buildFaqJsonLd(opts: JsonLdSiteOptions = {}): JsonLdGraph {
         mainEntity: [
           {
             "@type": "Question",
-            name: "Čo je Blueprint Scanner?",
+            name: "What is Blueprint Scanner?",
             acceptedAnswer: {
               "@type": "Answer",
-              text: "Nástroj na reverse-spec verejného frontendu z URL alebo HTML: crawl, design tokeny, WordPress/JetEngine/Elementor extract a export JSON/ZIP.",
+              text: "A reverse-spec tool for public frontends from a URL or HTML: crawl, design tokens, WordPress/JetEngine/Elementor extract, and JSON/ZIP export.",
             },
           },
           {
             "@type": "Question",
-            name: "Klonuje Blueprint aj backend a databázu?",
+            name: "Does Blueprint clone the backend and database?",
             acceptedAnswer: {
               "@type": "Answer",
-              text: "Nie. Blueprint je frontend snapshot z verejne dostupného HTML/CSS/JS a voliteľných verejných REST endpointov. Nesťahuje .env, heslá ani privátne postmeta.",
+              text: "No. Blueprint is a frontend snapshot from publicly available HTML/CSS/JS and optional public REST endpoints. It does not download .env files, passwords, or private postmeta.",
             },
           },
           {
             "@type": "Question",
-            name: "Ako exportujem Elementor šablónu?",
+            name: "How do I export an Elementor template?",
             acceptedAnswer: {
               "@type": "Answer",
-              text: "Po skene stiahni elementor-template-import.json a importuj ju vo WordPresse cez Templates → Saved Templates → Import.",
+              text: "After a scan, download elementor-template-import.json and import it in WordPress via Templates → Saved Templates → Import.",
             },
           },
         ],

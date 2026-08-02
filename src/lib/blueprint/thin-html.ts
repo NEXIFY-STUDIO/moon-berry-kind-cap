@@ -68,10 +68,10 @@ export function detectThinHtml(opts: {
 
   // Thin HTML only when SPA signals + sparse content, or extremely empty body
   if (textLen < 40) {
-    reasons.push(`Telo stránky má takmer žiadny text (${textLen} znakov).`);
+    reasons.push(`Page body has almost no text (${textLen} characters).`);
   } else if (textLen < threshold) {
     reasons.push(
-      `Málo viditeľného textu v HTML (${textLen} znakov) — pravdepodobne sa obsah načíta JavaScriptom.`,
+      `Little visible text in HTML (${textLen} characters) — content is likely loaded by JavaScript.`,
     );
   }
 
@@ -79,20 +79,20 @@ export function detectThinHtml(opts: {
     const names = opts.tech
       .filter((t) => SPA_TECH.has(t.name))
       .map((t) => t.name);
-    reasons.push(`Detegovaný SPA stack: ${[...new Set(names)].join(", ")}.`);
+    reasons.push(`Detected SPA stack: ${[...new Set(names)].join(", ")}.`);
   } else if (spaMarkers) {
-    reasons.push("Nájdené SPA shell markery (#root / #__next / __NEXT_DATA__).");
+    reasons.push("SPA shell markers found (#root / #__next / __NEXT_DATA__).");
   }
 
   if (fewHeadings && looksLikeSpa) {
-    reasons.push("Málo nadpisov v raw HTML (shell bez vyrenderovaného obsahu).");
+    reasons.push("Few headings in raw HTML (shell without rendered content).");
   }
   if (fewLinks && looksLikeSpa && textLen < threshold) {
-    reasons.push("Minimálny počet odkazov v počiatočnom HTML.");
+    reasons.push("Minimal number of links in initial HTML.");
   }
   if (opts.rendered === false && looksLikeSpa && thinContent) {
     reasons.push(
-      "Headless render nebol použitý alebo zlyhal — skús zapnúť „Headless render“.",
+      "Headless render was not used or failed — try enabling “Headless render”.",
     );
   }
 
@@ -104,7 +104,7 @@ export function detectThinHtml(opts: {
 
 export function thinHtmlUserMessage(reasons: string[]): string {
   const base =
-    "Tenký HTML shell (SPA): výstup je chudobnejší, lebo server poslal hlavne prázdny obal a obsah sa kreslí v prehliadači.";
+    "Thin HTML shell (SPA): output is thinner because the server mostly sent an empty shell and content is painted in the browser.";
   if (!reasons.length) return base;
   return `${base} ${reasons.slice(0, 3).join(" ")}`;
 }

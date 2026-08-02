@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { compareBlueprints } from "./compare";
 import {
+  clearBlueprintsDb,
   deleteBlueprintDb,
   listBlueprintsDb,
   loadBlueprintDb,
@@ -18,6 +19,12 @@ import {
 installProcessErrorGuards();
 
 const memory = new Map<string, Blueprint>();
+
+function isRemoteDb(): boolean {
+  const url =
+    typeof process !== "undefined" ? process.env.DATABASE_URL?.trim() : "";
+  return Boolean(url);
+}
 
 const scanSchema = z
   .object({
@@ -56,31 +63,46 @@ export const scanBlueprint = createServerFn({ method: "POST" })
           signal,
         });
         if (signal?.aborted) {
-          return { ok: false as const, error: "Sken bol zrušený.", code: "ABORTED" };
+          return { ok: false as const, error: "Scan cancelled.", code: "ABORTED" };
         }
-        memory.set(blueprint.id, blueprint);
+        const withTime: Blueprint = {
+          ...blueprint,
+          updatedAt: blueprint.updatedAt || new Date().toISOString(),
+        };
+        memory.set(withTime.id, withTime);
         if (memory.size > 40) {
           const first = memory.keys().next().value;
           if (first) memory.delete(first);
         }
         try {
-          await saveBlueprintDb(blueprint);
+          await saveBlueprintDb(withTime);
         } catch (err) {
           console.warn("[blueprint] DB save failed:", err);
         }
-        return { ok: true as const, blueprint };
+        return { ok: true as const, blueprint: withTime };
       } catch (err) {
         if (
           signal?.aborted ||
           (err instanceof Error &&
             (err.name === "AbortError" || /abort/i.test(err.message)))
         ) {
-          return { ok: false as const, error: "Sken bol zrušený.", code: "ABORTED" };
+          return { ok: false as const, error: "Scan cancelled.", code: "ABORTED" };
         }
-        return toApiError(err, "Sken zlyhal z neznámeho dôvodu.");
+        return toApiError(err, "Scan failed for an unknown reason.");
       }
     });
   });
+
+/** Runtime history backend — remote only when DATABASE_URL is set */
+export const getHistoryBackend = createServerFn({ method: "GET" }).handler(
+  async () => {
+    const remote = isRemoteDb();
+    return {
+      remote,
+      source: remote ? ("neon" as const) : ("local" as const),
+    };
+  },
+);
 
 export const getBlueprint = createServerFn({ method: "GET" })
   .validator((data: unknown) => z.object({ id: z.string().min(1) }).parse(data))
@@ -106,12 +128,14 @@ export const listBlueprints = createServerFn({ method: "GET" }).handler(
     try {
       const items = await listBlueprintsDb(40);
       return {
+        remote: isRemoteDb(),
         items: items.map((b) => ({
           id: b.id,
           title: b.title,
           sourceUrl: b.sourceUrl,
           createdAt: b.createdAt,
-          tech: [] as string[],
+          updatedAt: b.updatedAt,
+          tech: b.tech,
           contentHash: b.contentHash,
         })),
       };
@@ -119,17 +143,45 @@ export const listBlueprints = createServerFn({ method: "GET" }).handler(
       const items = [...memory.values()]
         .map((b) => ({
           id: b.id,
-          title: b.meta.title || b.sourceUrl || "Bez názvu",
+          title: b.meta.title || b.sourceUrl || "Untitled",
           sourceUrl: b.sourceUrl,
           createdAt: b.createdAt,
+          updatedAt: b.updatedAt || b.createdAt,
           tech: b.tech.map((t) => t.name),
           contentHash: b.contentHash,
         }))
-        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-      return { items };
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+      return { remote: isRemoteDb(), items };
     }
   },
 );
+
+export const upsertBlueprint = createServerFn({ method: "POST" })
+  .validator((data: unknown) =>
+    z.object({ blueprint: z.any() }).parse(data),
+  )
+  .handler(async ({ data }) => {
+    const bp = data.blueprint as Blueprint;
+    if (!bp?.id) return { ok: false as const, error: "Invalid blueprint" };
+    const withTime: Blueprint = {
+      ...bp,
+      updatedAt: bp.updatedAt || new Date().toISOString(),
+    };
+    memory.set(withTime.id, withTime);
+    try {
+      await saveBlueprintDb(withTime);
+    } catch (err) {
+      console.warn("[upsertBlueprint] DB save failed:", err);
+      // Still ok if only memory — client treats remote flag separately
+      if (isRemoteDb()) {
+        return {
+          ok: false as const,
+          error: err instanceof Error ? err.message : "DB save failed",
+        };
+      }
+    }
+    return { ok: true as const };
+  });
 
 export const deleteBlueprint = createServerFn({ method: "POST" })
   .validator((data: unknown) => z.object({ id: z.string().min(1) }).parse(data))
@@ -142,6 +194,18 @@ export const deleteBlueprint = createServerFn({ method: "POST" })
     }
     return { ok: true as const };
   });
+
+export const clearBlueprints = createServerFn({ method: "POST" }).handler(
+  async () => {
+    memory.clear();
+    try {
+      await clearBlueprintsDb();
+    } catch {
+      /* ignore */
+    }
+    return { ok: true as const };
+  },
+);
 
 export const compareBlueprintPair = createServerFn({ method: "POST" })
   .validator((data: unknown) =>
@@ -164,10 +228,7 @@ export const compareBlueprintPair = createServerFn({ method: "POST" })
       memory.get(data.rightId) ||
       (await loadBlueprintDb(data.rightId).catch(() => null));
     if (!left || !right) {
-      return {
-        ok: false as const,
-        error: "Jeden alebo oba blueprinty sa nenašli. Otvor ich z histórie alebo importuj JSON.",
-      };
+      return { ok: false as const, error: "Blueprint not found" };
     }
     return { ok: true as const, result: compareBlueprints(left, right) };
   });

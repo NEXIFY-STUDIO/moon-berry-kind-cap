@@ -25,9 +25,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { scanBlueprint } from "@/lib/blueprint/server";
-import { saveBlueprintLocal } from "@/lib/blueprint/storage";
+import { save as historySave } from "@/lib/history/store";
 import type { Blueprint } from "@/lib/blueprint/types";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n/context";
 
 const EXAMPLES = [
   "https://example.com",
@@ -42,12 +43,24 @@ const MOVE_CANCEL_PX = 8;
 /** Tooltip auto-hide */
 const TIP_MS = 2200;
 
+/** Dashboard / URL deep-link → ScanForm options */
+export type ScanFormDeepLink = {
+  tool?: string;
+  render?: boolean;
+  wayback?: boolean;
+  crawl?: boolean;
+  assets?: boolean;
+  wp?: boolean;
+};
+
 type Props = {
   onScanned: (bp: Blueprint) => void;
   busy?: boolean;
   setBusy?: (v: boolean) => void;
   /** Compact mode for centered 100dvh shell (hides long copy) */
   compact?: boolean;
+  /** Apply mode + toggles from dashboard / URL search params */
+  deepLink?: ScanFormDeepLink | null;
 };
 
 type IconToggleProps = {
@@ -57,6 +70,7 @@ type IconToggleProps = {
   label: string;
   description: string;
   testId: string;
+  emphasized?: boolean;
   children: ReactNode;
 };
 
@@ -72,6 +86,7 @@ function IconToggle({
   label,
   description,
   testId,
+  emphasized,
   children,
 }: IconToggleProps) {
   const [tipOpen, setTipOpen] = useState(false);
@@ -130,6 +145,11 @@ function IconToggle({
       document.removeEventListener("pointerdown", onDoc);
     };
   }, [tipOpen, hideTip, testId]);
+
+  useEffect(() => {
+    if (!emphasized || disabled) return;
+    showTip();
+  }, [emphasized, disabled, showTip]);
 
   function fireToggle() {
     if (disabled) return;
@@ -196,7 +216,6 @@ function IconToggle({
 
   function onKeyDown(e: ReactKeyboardEvent<HTMLButtonElement>) {
     if (disabled) return;
-    // a11y: keyboard toggles directly (long-press is pointer/touch model)
     if (e.key === " " || e.key === "Enter") {
       e.preventDefault();
       fireToggle();
@@ -221,7 +240,6 @@ function IconToggle({
         onKeyDown={onKeyDown}
         onContextMenu={(e) => e.preventDefault()}
         onClick={(e) => {
-          // Native click after pointer sequence must never toggle
           e.preventDefault();
           e.stopPropagation();
         }}
@@ -230,6 +248,7 @@ function IconToggle({
           active
             ? "toggle-neon-ring bg-bg-subtle text-accent border-transparent"
             : "text-fg-subtle border-transparent hover:text-fg-muted",
+          emphasized && "ring-2 ring-accent/60 scale-105",
           disabled && "opacity-40 pointer-events-none",
           pressScale && "scale-95",
           holding && !disabled && "scale-[0.97]",
@@ -250,7 +269,26 @@ function IconToggle({
   );
 }
 
-export function ScanForm({ onScanned, busy, setBusy, compact = false }: Props) {
+function deepLinkKey(dl: ScanFormDeepLink | null | undefined): string {
+  if (!dl) return "";
+  return [
+    dl.tool ?? "",
+    dl.render === undefined ? "" : String(dl.render),
+    dl.wayback === undefined ? "" : String(dl.wayback),
+    dl.crawl === undefined ? "" : String(dl.crawl),
+    dl.assets === undefined ? "" : String(dl.assets),
+    dl.wp === undefined ? "" : String(dl.wp),
+  ].join("|");
+}
+
+export function ScanForm({
+  onScanned,
+  busy,
+  setBusy,
+  compact = false,
+  deepLink = null,
+}: Props) {
+  const { t } = useI18n();
   const [mode, setMode] = useState<"url" | "html">("url");
   const [url, setUrl] = useState("");
   const [html, setHtml] = useState("");
@@ -262,8 +300,13 @@ export function ScanForm({ onScanned, busy, setBusy, compact = false }: Props) {
   const [wpJetEngine, setWpJetEngine] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [localBusy, setLocalBusy] = useState(false);
+  const [highlight, setHighlight] = useState<string | null>(null);
+  const [deepNote, setDeepNote] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const cancelledRef = useRef(false);
+  const urlInputRef = useRef<HTMLInputElement | null>(null);
+  const htmlAreaRef = useRef<HTMLTextAreaElement | null>(null);
+  const appliedKeyRef = useRef<string>("");
   const isBusy = busy ?? localBusy;
   const crawlOn = maxPages > 1;
 
@@ -272,11 +315,78 @@ export function ScanForm({ onScanned, busy, setBusy, compact = false }: Props) {
     setBusy?.(v);
   };
 
+  useEffect(() => {
+    if (!deepLink) return;
+    const key = deepLinkKey(deepLink);
+    if (!key || key === appliedKeyRef.current) return;
+    appliedKeyRef.current = key;
+
+    const notes: string[] = [];
+    let focus: "url" | "html" = "url";
+    let emphasize: string | null = null;
+
+    if (deepLink.tool === "html-paste") {
+      setMode("html");
+      focus = "html";
+      notes.push(t("scan.mode.html"));
+    } else {
+      setMode("url");
+      focus = "url";
+      if (deepLink.tool === "url-scan") {
+        notes.push(t("scan.mode.url"));
+      }
+    }
+
+    if (typeof deepLink.render === "boolean") {
+      setRender(deepLink.render);
+      emphasize = "render";
+      if (deepLink.render) notes.push(t("scan.toggle.render"));
+    }
+    if (typeof deepLink.wayback === "boolean") {
+      setWayback(deepLink.wayback);
+      emphasize = "wayback";
+      if (deepLink.wayback) notes.push(t("scan.toggle.wayback"));
+    }
+    if (typeof deepLink.crawl === "boolean") {
+      setMaxPages(deepLink.crawl ? 5 : 1);
+      emphasize = "crawl";
+      if (deepLink.crawl) notes.push(t("scan.toggle.crawl"));
+    }
+    if (typeof deepLink.assets === "boolean") {
+      setCaptureAssets(deepLink.assets);
+      emphasize = "assets";
+      if (deepLink.assets) notes.push(t("scan.toggle.assets"));
+    }
+    if (typeof deepLink.wp === "boolean") {
+      setWpJetEngine(deepLink.wp);
+      emphasize = "wp";
+      if (deepLink.wp) notes.push(t("scan.toggle.wp"));
+    }
+
+    if (notes.length > 0) {
+      setDeepNote(notes.join(" · "));
+    }
+    if (emphasize) {
+      setHighlight(emphasize);
+      window.setTimeout(() => setHighlight(null), 2800);
+    }
+
+    requestAnimationFrame(() => {
+      window.setTimeout(() => {
+        if (focus === "html") {
+          htmlAreaRef.current?.focus();
+        } else {
+          urlInputRef.current?.focus();
+        }
+      }, 50);
+    });
+  }, [deepLink, t]);
+
   function cancelScan() {
     cancelledRef.current = true;
     abortRef.current?.abort();
     markBusy(false);
-    setError("Sken bol zrušený.");
+    setError(t("scan.cancelled"));
   }
 
   async function runScan() {
@@ -319,7 +429,7 @@ export function ScanForm({ onScanned, busy, setBusy, compact = false }: Props) {
       });
 
       if (cancelledRef.current || ac.signal.aborted) {
-        setError("Sken bol zrušený.");
+        setError(t("scan.cancelled"));
         return;
       }
 
@@ -327,7 +437,7 @@ export function ScanForm({ onScanned, busy, setBusy, compact = false }: Props) {
         setError(result.error);
         return;
       }
-      saveBlueprintLocal(result.blueprint);
+      await historySave(result.blueprint);
       onScanned(result.blueprint);
     } catch (e) {
       if (
@@ -336,10 +446,10 @@ export function ScanForm({ onScanned, busy, setBusy, compact = false }: Props) {
         (e instanceof Error &&
           (e.name === "AbortError" || /abort|zrušen/i.test(e.message)))
       ) {
-        setError("Sken bol zrušený.");
+        setError(t("scan.cancelled"));
         return;
       }
-      setError(e instanceof Error ? e.message : "Sken zlyhal.");
+      setError(e instanceof Error ? e.message : t("scan.failed"));
     } finally {
       if (abortRef.current === ac) abortRef.current = null;
       markBusy(false);
@@ -350,16 +460,21 @@ export function ScanForm({ onScanned, busy, setBusy, compact = false }: Props) {
     <div className={cn("w-full", compact ? "" : "panel p-5 sm:p-6")}>
       {!compact && (
         <div className="mb-5 flex flex-col gap-1">
-          <h2 className="text-lg font-semibold tracking-tight">Skenovať projekt</h2>
-          <p className="text-sm text-fg-muted">
-            Verejný frontend snapshot + voliteľný WordPress/JetEngine clone extract
-            (REST, CCT, listing grids, Elementor, sitemap). Nie je to klon servera ani DB.
-          </p>
+          <h2 className="text-lg font-semibold tracking-tight">{t("scan.title")}</h2>
+          <p className="text-sm text-fg-muted">{t("scan.desc")}</p>
         </div>
       )}
-      {compact && <h2 className="sr-only">Skenovať projekt</h2>}
+      {compact && <h2 className="sr-only">{t("scan.title")}</h2>}
 
-      {/* Segmented URL | HTML */}
+      {deepNote && (
+        <div
+          data-testid="deep-link-note"
+          className="mb-3 rounded-[var(--radius-md)] border border-accent/30 bg-accent/10 px-3 py-2 text-xs text-accent"
+        >
+          {deepNote}
+        </div>
+      )}
+
       <div className="w-full grid grid-cols-2 p-1 bg-bg border border-border rounded-xl text-xs font-medium mb-5">
         <button
           type="button"
@@ -373,12 +488,13 @@ export function ScanForm({ onScanned, busy, setBusy, compact = false }: Props) {
           )}
         >
           <Globe2 className="size-3.5" />
-          URL
+          {t("scan.mode.url")}
         </button>
         <button
           type="button"
           disabled={isBusy}
           onClick={() => setMode("html")}
+          data-testid="mode-html"
           className={cn(
             "py-2 px-3 rounded-lg transition-colors flex items-center justify-center gap-1.5",
             mode === "html"
@@ -387,21 +503,22 @@ export function ScanForm({ onScanned, busy, setBusy, compact = false }: Props) {
           )}
         >
           <FileCode2 className="size-3.5" />
-          Vložiť HTML
+          {t("scan.mode.html")}
         </button>
       </div>
 
-      {/* Primary input — neon ring + start here badge */}
       <div className="relative pt-2.5 mb-4">
         <div className="absolute -top-1 left-3 z-20 px-2 py-0.5 rounded-full bg-bg-elevated border border-accent/40 text-[10px] font-mono text-accent flex items-center gap-1.5 start-here-badge">
           <span className="size-1.5 rounded-full bg-accent animate-pulse" />
-          start here
+          {t("scan.badge.startHere")}
         </div>
         <div className="neon-border-wrapper">
           <div className="neon-inner">
             {mode === "url" ? (
               <Input
-                placeholder="https://moja-appka.com"
+                ref={urlInputRef}
+                data-testid="scan-url-input"
+                placeholder={t("scan.placeholder.url")}
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 onKeyDown={(e) => {
@@ -415,14 +532,16 @@ export function ScanForm({ onScanned, busy, setBusy, compact = false }: Props) {
             ) : (
               <div className="space-y-2 p-2">
                 <Input
-                  placeholder="https://povodna-domena.sk"
+                  placeholder={t("scan.placeholder.baseUrl")}
                   value={baseUrl}
                   onChange={(e) => setBaseUrl(e.target.value)}
                   disabled={isBusy}
                   className="h-9 border-0 bg-transparent shadow-none focus-visible:ring-0 text-xs"
                 />
                 <Textarea
-                  placeholder="<!DOCTYPE html>…"
+                  ref={htmlAreaRef}
+                  data-testid="scan-html-input"
+                  placeholder={t("scan.placeholder.html")}
                   value={html}
                   onChange={(e) => setHtml(e.target.value)}
                   disabled={isBusy}
@@ -451,7 +570,7 @@ export function ScanForm({ onScanned, busy, setBusy, compact = false }: Props) {
       )}
       {mode === "url" && compact && (
         <p className="text-xs text-center text-fg-subtle mb-4">
-          Príklad:{" "}
+          {t("scan.example")}{" "}
           <button
             type="button"
             disabled={isBusy}
@@ -463,56 +582,60 @@ export function ScanForm({ onScanned, busy, setBusy, compact = false }: Props) {
         </p>
       )}
 
-      {/* Icon toggles — short tap = tip, long-press = toggle */}
       <div className="flex items-center justify-between gap-2 px-3 py-1.5 mb-2 bg-bg border border-border rounded-full">
-        <span className="text-xs text-fg-subtle shrink-0">Možnosti:</span>
+        <span className="text-xs text-fg-subtle shrink-0">{t("scan.options")}</span>
         <div className="flex items-center gap-0.5 sm:gap-1">
           <IconToggle
             testId="opt-render"
-            label="Headless render"
-            description="Načíta SPA/JS DOM namiesto surového HTML."
+            label={t("scan.toggle.render")}
+            description={t("scan.toggle.render.desc")}
             active={render && mode === "url"}
             disabled={isBusy || mode === "html"}
+            emphasized={highlight === "render"}
             onToggle={() => setRender((v) => !v)}
           >
             <Bot className="size-4" />
           </IconToggle>
           <IconToggle
             testId="opt-wayback"
-            label="Wayback fallback"
-            description="Pri chybe skúsi archive.org snapshot."
+            label={t("scan.toggle.wayback")}
+            description={t("scan.toggle.wayback.desc")}
             active={wayback && mode === "url"}
             disabled={isBusy || mode === "html"}
+            emphasized={highlight === "wayback"}
             onToggle={() => setWayback((v) => !v)}
           >
             <Archive className="size-4" />
           </IconToggle>
           <IconToggle
             testId="opt-crawl"
-            label="Crawl stránok"
-            description="Prejde same-origin podstránky (ON = 5, OFF = 1)."
+            label={t("scan.toggle.crawl")}
+            description={t("scan.toggle.crawl.desc")}
             active={crawlOn && mode === "url"}
             disabled={isBusy || mode === "html"}
+            emphasized={highlight === "crawl"}
             onToggle={() => setMaxPages((n) => (n > 1 ? 1 : 5))}
           >
             <Layers className="size-4" />
           </IconToggle>
           <IconToggle
             testId="opt-assets"
-            label="Stiahnuť assety"
-            description="Stiahne obrázky/fonty do ZIP exportu."
+            label={t("scan.toggle.assets")}
+            description={t("scan.toggle.assets.desc")}
             active={captureAssets}
             disabled={isBusy}
+            emphasized={highlight === "assets"}
             onToggle={() => setCaptureAssets((v) => !v)}
           >
             <Package className="size-4" />
           </IconToggle>
           <IconToggle
             testId="opt-wp"
-            label="WP / JetEngine clone"
-            description="REST, CCT, listing grids, Elementor, sitemap."
+            label={t("scan.toggle.wp")}
+            description={t("scan.toggle.wp.desc")}
             active={wpJetEngine}
             disabled={isBusy}
+            emphasized={highlight === "wp"}
             onToggle={() => setWpJetEngine((v) => !v)}
           >
             <Blocks className="size-4" />
@@ -521,14 +644,12 @@ export function ScanForm({ onScanned, busy, setBusy, compact = false }: Props) {
       </div>
       {!compact && (
         <p className="mb-4 text-[11px] text-fg-subtle text-center sm:text-left">
-          Krátky tap = nápoveda · podržanie ≈0,5 s = zapnúť/vypnúť · aktívne = neon
+          {t("scan.tip.hold")}
         </p>
       )}
       {compact && <div className="mb-4" />}
 
-      <span className="sr-only">
-        Headless render Wayback Stiahnuť assety Crawl WP / JetEngine
-      </span>
+      <span className="sr-only">{t("scan.srOptions")}</span>
 
       {error && (
         <div className="mb-4 flex items-start gap-2 rounded-[var(--radius-md)] border border-danger/30 bg-danger/10 px-3 py-2.5 text-sm text-danger">
@@ -548,7 +669,7 @@ export function ScanForm({ onScanned, busy, setBusy, compact = false }: Props) {
               className="w-full sm:w-auto min-w-[120px] border-danger/40 text-danger hover:bg-danger/10"
             >
               <XCircle className="size-4" />
-              Zrušiť
+              {t("scan.cancel")}
             </Button>
           )}
           <Button
@@ -560,12 +681,12 @@ export function ScanForm({ onScanned, busy, setBusy, compact = false }: Props) {
             {isBusy ? (
               <>
                 <Loader2 className="size-4 animate-spin" />
-                Skenujem…
+                {t("scan.busy")}
               </>
             ) : (
               <>
                 <ScanSearch className="size-4" />
-                Vytvoriť blueprint
+                {t("scan.cta")}
                 <ArrowRight className="size-4 opacity-70" />
               </>
             )}

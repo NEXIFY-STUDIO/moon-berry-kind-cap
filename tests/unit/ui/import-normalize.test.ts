@@ -16,12 +16,12 @@ describe("import-normalize · vault / Import JSON", () => {
   });
 
   it.each([
-    [null, "Neplatný"],
-    [undefined, "Neplatný"],
-    [{}, "Neplatný"],
-    [{ id: "x" }, "Neplatný"],
-    [{ id: "x", version: "1" }, "Neplatný"],
-    [{ id: "x", version: "1", html: "<p/>" }, "Neplatný"], // missing stats
+    [null, "Invalid"],
+    [undefined, "Invalid"],
+    [{}, "Invalid"],
+    [{ id: "x" }, "Invalid"],
+    [{ id: "x", version: "1" }, "Invalid"],
+    [{ id: "x", version: "1", html: "<p/>" }, "Invalid"], // missing stats
   ])("rejects invalid payload %#", (raw, msg) => {
     expect(() => normalizeImportedBlueprint(raw)).toThrow(new RegExp(msg));
   });

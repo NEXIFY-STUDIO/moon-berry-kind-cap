@@ -757,7 +757,7 @@ export function compileElementorTemplate(opts: {
 
   // Ensure at least one container with title heading
   if (content.length === 0) {
-    notes.push("DOM nemal Elementor markery — vytvorený fallback container.");
+    notes.push("DOM had no Elementor markers — created a fallback container.");
     content.push({
       id: randId(),
       elType: "container",
