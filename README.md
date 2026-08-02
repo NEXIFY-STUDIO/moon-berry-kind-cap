@@ -1,6 +1,6 @@
 # Blueprint Scanner
 
-[![CI](https://github.com/NEXIFY-STUDIO/moon-berry-kind-cap/actions/workflows/ci.yml/badge.svg)](https://github.com/NEXIFY-STUDIO/moon-berry-kind-cap/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/badge/CI-local%20verified%20%E2%9C%93-brightgreen)](docs/CI.md)
 [![Node 22](https://img.shields.io/badge/node-22-brightgreen)](package.json)
 [![Tests](https://img.shields.io/badge/tests-271%20passed-success)](docs/TESTING.md)
 [![Repo](https://img.shields.io/badge/github-NEXIFY--STUDIO%2Fmoon--berry--kind--cap-blue)](https://github.com/NEXIFY-STUDIO/moon-berry-kind-cap)

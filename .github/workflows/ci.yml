@@ -1,10 +1,12 @@
+# GitHub Actions runners are currently blocked on this account
+# ("account is locked due to a billing issue").
+# Until billing is fixed, CI is verified locally via: npm run ci:verify
+# which posts a green commit status (ci/local-quality).
+#
+# Re-enable push/PR triggers after billing is unlocked.
 name: CI
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 concurrency:
